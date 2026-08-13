@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import ContentModal from './ContentModal';
 import PublishModal from './PublishModal';
-import ApprovedArticleCard, { esBorradorWordPress } from './ApprovedArticleCard';
+import ApprovedArticleCard from './ApprovedArticleCard';
 import MedioLogo, { MedioBadge } from './MedioLogo';
 import { agruparPorMedio, getMedioTheme, ordenarMedios } from '@/lib/medios';
 
@@ -171,10 +171,7 @@ export default function ArticleDashboard({
     [itemsFiltrados, filtroMedio, vistaPanel],
   );
 
-  const borradoresPendientesWeb = useMemo(
-    () => approvedItems.filter((item) => esBorradorWordPress(item)).length,
-    [approvedItems],
-  );
+  const borradoresPendientesWeb = approvedItems.length;
 
   function openContentModal(articulo) {
     setSelectedArticle(articulo);
@@ -343,17 +340,11 @@ export default function ArticleDashboard({
         throw new Error(data.error || 'No se pudo publicar el artículo');
       }
 
-      const aprobado = buildApprovedItem(articulo, data, publicarEnWeb);
-
       setItems((prev) => prev.filter((item) => item.id !== articulo.id));
-      setApprovedItems((prev) => {
-        const sinDuplicado = prev.filter((item) => item.id !== articulo.id);
-        return [aprobado, ...sinDuplicado];
-      });
       setPublishArticle(null);
-      setVistaPanel('aprobados');
 
       if (publicarEnWeb) {
+        setApprovedItems((prev) => prev.filter((item) => item.id !== articulo.id));
         setFeedback({
           type: 'success',
           message: `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,
@@ -361,6 +352,12 @@ export default function ArticleDashboard({
           linkLabel: 'Ver artículo publicado',
         });
       } else {
+        const aprobado = buildApprovedItem(articulo, data, false);
+        setApprovedItems((prev) => {
+          const sinDuplicado = prev.filter((item) => item.id !== articulo.id);
+          return [aprobado, ...sinDuplicado];
+        });
+        setVistaPanel('aprobados');
         setFeedback({
           type: 'success',
           message: `Borrador creado en ${data.medio} → categoría "${data.categoria}". Puedes publicarlo en la web desde la pestaña Aprobados.${data.emailNotificacion ? ` Notificará a ${data.emailNotificacion} al publicar.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,
@@ -408,17 +405,7 @@ export default function ArticleDashboard({
         throw new Error(data.error || 'No se pudo publicar en la web');
       }
 
-      setApprovedItems((prev) =>
-        prev.map((item) =>
-          item.id === articulo.id
-            ? {
-                ...item,
-                wp_post_status: data.articulo?.wp_post_status ?? 'publish',
-                wp_post_url: data.wordpressPostUrl ?? item.wp_post_url,
-              }
-            : item,
-        ),
-      );
+      setApprovedItems((prev) => prev.filter((item) => item.id !== articulo.id));
 
       setFeedback({
         type: 'success',

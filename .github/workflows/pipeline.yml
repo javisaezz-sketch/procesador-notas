@@ -51,9 +51,67 @@ jobs:
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
           DASHBOARD_URL: https://procesador-notas.vercel.app
 
-      - name: Resumen si falla
-        if: failure()
+      - name: Resumen del pipeline
+        if: always()
         run: |
-          echo "## Pipeline fallido" >> "$GITHUB_STEP_SUMMARY"
-          echo "Revisa los logs del job. Puede haber fallado un buzón POP3 o Gemini en una nota concreta." >> "$GITHUB_STEP_SUMMARY"
-          echo "::error title=Pipeline fallido::Revisa los logs en Actions. Algunos medios pueden haber fallado sin bloquear el resto."
+          if [ -f pipeline-summary.json ]; then
+            node <<'NODE'
+          const fs = require('fs');
+          const summary = JSON.parse(fs.readFileSync('pipeline-summary.json', 'utf8'));
+          const lines = [];
+
+          if (summary.ok && !summary.advertencias?.length) {
+            lines.push('## Pipeline OK');
+            lines.push(`Emails nuevos: ${summary.emails?.nuevas ?? 0}`);
+            lines.push(`Artículos generados: ${summary.articulosGenerados ?? 0}`);
+          } else if (summary.ok && summary.advertencias?.length) {
+            lines.push('## Pipeline completado con avisos');
+            lines.push(`Emails nuevos: ${summary.emails?.nuevas ?? 0}`);
+            lines.push(`Artículos generados: ${summary.articulosGenerados ?? 0}`);
+            lines.push('');
+            lines.push('### Avisos');
+            for (const item of summary.advertencias) {
+              if (item.medio) lines.push(`- POP3 **${item.medio}**: ${item.error}`);
+              else if (item.notaId) lines.push(`- Gemini nota **#${item.notaId}**: ${item.error}`);
+              else lines.push(`- ${item.error}`);
+            }
+          } else {
+            lines.push('## Pipeline fallido');
+            if (summary.fatal) {
+              lines.push(`**${summary.fatal.fase}**: ${summary.fatal.error}`);
+            }
+            if (summary.advertencias?.length) {
+              lines.push('');
+              lines.push('### Avisos previos');
+              for (const item of summary.advertencias) {
+                if (item.medio) lines.push(`- POP3 **${item.medio}**: ${item.error}`);
+                else if (item.notaId) lines.push(`- Gemini nota **#${item.notaId}**: ${item.error}`);
+              }
+            }
+          }
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          NODE
+          else
+            echo "## Pipeline fallido" >> "$GITHUB_STEP_SUMMARY"
+            echo "No se generó resumen. Revisa los logs del paso anterior." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f pipeline-summary.json ]; then
+            node <<'NODE'
+          const fs = require('fs');
+          const summary = JSON.parse(fs.readFileSync('pipeline-summary.json', 'utf8'));
+          if (!summary.ok && summary.fatal) {
+            console.log(`::error title=Pipeline fallido::${summary.fatal.fase}: ${summary.fatal.error}`);
+          } else if (summary.advertencias?.length) {
+            for (const item of summary.advertencias.slice(0, 5)) {
+              const msg = item.medio
+                ? `POP3 ${item.medio}: ${item.error}`
+                : item.notaId
+                  ? `Gemini nota #${item.notaId}: ${item.error}`
+                  : item.error;
+              console.log(`::warning title=Aviso del pipeline::${msg}`);
+            }
+          }
+          NODE
+          fi

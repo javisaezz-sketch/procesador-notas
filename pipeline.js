@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const fs = require('fs');
+
 const { ensureWebSocketPolyfill } = require('./lib/supabaseNode.cjs');
 ensureWebSocketPolyfill();
 
@@ -7,6 +9,15 @@ const { procesarBandejaPop3 } = require('./lib/receptorPop3.cjs');
 const { procesarPendientes } = require('./lib/procesadorCore.cjs');
 
 const DASHBOARD_URL = process.env.DASHBOARD_URL || 'https://procesador-notas.vercel.app';
+const SUMMARY_FILE = 'pipeline-summary.json';
+
+function guardarResumen(resumen) {
+  try {
+    fs.writeFileSync(SUMMARY_FILE, JSON.stringify(resumen, null, 2));
+  } catch (error) {
+    console.error(`No se pudo guardar ${SUMMARY_FILE}: ${error.message}`);
+  }
+}
 
 async function main() {
   console.log('');
@@ -15,7 +26,8 @@ async function main() {
   console.log('═══════════════════════════════════════════');
   console.log('');
 
-  let huboErrores = false;
+  const advertencias = [];
+  let errorFatal = null;
 
   console.log('📥 PASO 1/2 — Leer emails e imágenes');
   let emailStats = { nuevas: 0, duplicadas: 0, imagenes: 0, medios: [] };
@@ -26,7 +38,7 @@ async function main() {
       emailStats.medios.forEach((m) => {
         if (m.error) {
           console.log(`   → ${m.medio}: ERROR — ${m.error}`);
-          huboErrores = true;
+          advertencias.push({ fase: 'pop3', medio: m.medio, error: m.error });
         } else {
           console.log(`   → ${m.medio}: ${m.nuevas} nuevos, ${m.duplicadas} duplicados`);
         }
@@ -34,7 +46,7 @@ async function main() {
     }
     console.log(`   → Total: ${emailStats.nuevas} emails | ${emailStats.imagenes} imágenes`);
   } catch (error) {
-    huboErrores = true;
+    errorFatal = { fase: 'pop3', error: error.message };
     console.error(`   ❌ Error en ingesta POP3: ${error.message}`);
   }
 
@@ -53,22 +65,52 @@ async function main() {
       console.log('   → No había notas pendientes de procesar.');
     } else {
       articulos.forEach((a) => {
-        console.log(`   → [${a.medioNombre}] Artículo #${a.articuloId}${a.imagen ? ' (con imagen)' : ''}`);
+        console.log(
+          `   → [${a.medioNombre}] Artículo #${a.articuloId}${a.imagen ? ' (con imagen)' : ''}`,
+        );
       });
       erroresGemini.forEach((e) => {
         console.log(`   → Nota #${e.notaId}: ERROR — ${e.error}`);
-        huboErrores = true;
+        advertencias.push({ fase: 'gemini', notaId: e.notaId, error: e.error });
       });
     }
   } catch (error) {
-    huboErrores = true;
+    errorFatal = { fase: 'gemini', error: error.message };
     console.error(`   ❌ Error en procesamiento Gemini: ${error.message}`);
   }
 
+  const mediosPop3 = emailStats.medios ?? [];
+  const mediosConError =
+    mediosPop3.length > 0 && mediosPop3.every((medio) => Boolean(medio.error));
+
+  if (mediosConError && !errorFatal) {
+    errorFatal = {
+      fase: 'pop3',
+      error: 'Todos los buzones POP3 fallaron',
+    };
+  }
+
+  const resumen = {
+    ok: !errorFatal,
+    fatal: errorFatal,
+    advertencias,
+    emails: {
+      nuevas: emailStats.nuevas,
+      duplicadas: emailStats.duplicadas,
+      imagenes: emailStats.imagenes,
+    },
+    articulosGenerados: articulos.length,
+    dashboardUrl: DASHBOARD_URL,
+  };
+
+  guardarResumen(resumen);
+
   console.log('');
   console.log('═══════════════════════════════════════════');
-  if (huboErrores) {
-    console.log('  ⚠️  PIPELINE COMPLETADO CON ERRORES');
+  if (errorFatal) {
+    console.log('  ❌ PIPELINE FALLIDO');
+  } else if (advertencias.length) {
+    console.log('  ⚠️  PIPELINE COMPLETADO CON AVISOS');
   } else {
     console.log('  ✅ PIPELINE COMPLETADO');
   }
@@ -78,12 +120,32 @@ async function main() {
   console.log(`   Abre: ${DASHBOARD_URL}`);
   console.log('');
 
-  if (huboErrores) {
+  if (advertencias.length) {
+    console.log('   Avisos:');
+    advertencias.forEach((item) => {
+      if (item.medio) {
+        console.log(`   - POP3 ${item.medio}: ${item.error}`);
+      } else if (item.notaId) {
+        console.log(`   - Gemini nota #${item.notaId}: ${item.error}`);
+      }
+    });
+    console.log('');
+  }
+
+  if (errorFatal) {
     process.exitCode = 1;
   }
 }
 
 main().catch((error) => {
+  guardarResumen({
+    ok: false,
+    fatal: { fase: 'pipeline', error: error.message },
+    advertencias: [],
+    emails: null,
+    articulosGenerados: 0,
+    dashboardUrl: DASHBOARD_URL,
+  });
   console.error('❌ Error fatal en pipeline:', error.message);
   process.exit(1);
 });

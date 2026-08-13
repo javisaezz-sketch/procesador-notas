@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+const { ensureWebSocketPolyfill } = require('./lib/supabaseNode.cjs');
+ensureWebSocketPolyfill();
+
 const { procesarBandejaPop3 } = require('./lib/receptorPop3.cjs');
 const { procesarPendientes } = require('./lib/procesadorCore.cjs');
 

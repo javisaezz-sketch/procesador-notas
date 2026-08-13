@@ -23,10 +23,11 @@
     "dotenv": "^16.4.7",
     "imapflow": "^1.0.184",
     "mailparser": "^3.7.2",
-    "node-pop3": "^0.10.0",
     "next": "^15.1.0",
+    "node-pop3": "^0.10.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",

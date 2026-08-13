@@ -1,4 +1,5 @@
 import ArticleDashboard from '../components/ArticleDashboard';
+import LogoutButton from '../components/LogoutButton';
 import { getArticulosPendientes } from '../lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,9 @@ export default async function DashboardPage() {
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-3 py-6 sm:px-6 sm:py-10 lg:px-8">
         <header className="mb-8 flex flex-col items-center px-2 text-center sm:mb-10">
+          <div className="flex w-full max-w-7xl items-start justify-end">
+            <LogoutButton />
+          </div>
           <p className="text-[0.65rem] font-semibold uppercase leading-relaxed tracking-[0.15em] text-slate-700 sm:text-sm sm:tracking-[0.2em]">
             PANEL SAEZ&amp;NAVES MEDIA GROUP
           </p>

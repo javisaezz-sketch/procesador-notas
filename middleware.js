@@ -1,49 +1,50 @@
 import { NextResponse } from 'next/server';
+import {
+  credencialesDashboardConfiguradas,
+  esRutaPublica,
+  getCookieSesion,
+  verificarTokenSesion,
+} from '@/lib/auth';
 
-function pedirLogin() {
-  return new NextResponse('Acceso restringido al panel.', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="Panel SAEZ&NAVES Media Group"',
-    },
-  });
-}
+export async function middleware(request) {
+  const { pathname } = request.nextUrl;
 
-function credencialesValidas(request, usuario, password) {
-  const authorization = request.headers.get('authorization');
-
-  if (!authorization?.startsWith('Basic ')) {
-    return false;
-  }
-
-  try {
-    const base64 = authorization.slice(6);
-    const decoded = atob(base64);
-    const separador = decoded.indexOf(':');
-    if (separador === -1) return false;
-
-    const user = decoded.slice(0, separador);
-    const pass = decoded.slice(separador + 1);
-
-    return user === usuario && pass === password;
-  } catch {
-    return false;
-  }
-}
-
-export function middleware(request) {
-  const usuario = process.env.DASHBOARD_USER;
-  const password = process.env.DASHBOARD_PASSWORD;
-
-  if (!usuario || !password) {
+  if (!credencialesDashboardConfiguradas()) {
     return NextResponse.next();
   }
 
-  if (credencialesValidas(request, usuario, password)) {
+  if (esRutaPublica(pathname)) {
+    if (pathname === '/login') {
+      const token = getCookieSesion(request);
+      const valido = await verificarTokenSesion(
+        token,
+        process.env.DASHBOARD_USER,
+        process.env.DASHBOARD_PASSWORD,
+      );
+
+      if (valido) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+    }
+
     return NextResponse.next();
   }
 
-  return pedirLogin();
+  const token = getCookieSesion(request);
+  const valido = await verificarTokenSesion(
+    token,
+    process.env.DASHBOARD_USER,
+    process.env.DASHBOARD_PASSWORD,
+  );
+
+  if (valido) {
+    return NextResponse.next();
+  }
+
+  const loginUrl = new URL('/login', request.url);
+  loginUrl.searchParams.set('from', pathname);
+
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {

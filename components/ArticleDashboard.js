@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ContentModal from './ContentModal';
 import PublishModal from './PublishModal';
 import MedioLogo, { MedioBadge } from './MedioLogo';
-import { agruparPorMedio, getMedioTheme } from '@/lib/medios';
+import { agruparPorMedio, getMedioTheme, ordenarMedios } from '@/lib/medios';
 
 function mensajeEmailBuzon(emailBuzon) {
   if (!emailBuzon) return '';
@@ -130,9 +130,9 @@ export default function ArticleDashboard({ articulos = [] }) {
       map.set(articulo.medio_id, articulo.medios);
     }
 
-    return [...map.entries()]
-      .map(([id, medio]) => ({ id, ...medio }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    return ordenarMedios(
+      [...map.entries()].map(([id, medio]) => ({ id, ...medio })),
+    );
   }, [items]);
 
   const itemsFiltrados = useMemo(() => {

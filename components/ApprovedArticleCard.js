@@ -18,7 +18,9 @@ function esBorradorWordPress(articulo) {
 export default function ApprovedArticleCard({
   articulo,
   isPublishing,
+  isAnulando,
   onPublishWeb,
+  onDelete,
 }) {
   const theme = getMedioTheme(articulo.medios);
   const borrador = esBorradorWordPress(articulo);
@@ -105,6 +107,15 @@ export default function ApprovedArticleCard({
             del medio.
           </p>
         )}
+
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={isPublishing || isAnulando}
+          className="rounded-xl border border-red-200 px-4 py-3.5 text-base font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
+        >
+          {isAnulando ? 'Eliminando...' : 'Eliminar del panel'}
+        </button>
       </div>
     </div>
   );

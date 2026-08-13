@@ -40,6 +40,7 @@ export default function MedioLogo({ medio, size = 'sm', className = '' }) {
         className="h-full w-full object-contain p-0.5"
         loading="lazy"
         decoding="async"
+        referrerPolicy="no-referrer"
       />
     </span>
   );

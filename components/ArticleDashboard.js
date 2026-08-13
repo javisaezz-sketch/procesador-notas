@@ -435,8 +435,11 @@ export default function ArticleDashboard({
   }
 
   async function handleAnular(articulo) {
+    const esAprobado = articulo.estado === 'publicado';
     const confirmar = window.confirm(
-      `¿Anular "${articulo.titulo_generado}"?\n\nDesaparecerá del panel y no se publicará en WordPress.`,
+      esAprobado
+        ? `¿Eliminar "${articulo.titulo_generado}" del panel?\n\nDesaparecerá de la lista de borradores. El contenido en WordPress no se borra automáticamente.`
+        : `¿Anular "${articulo.titulo_generado}"?\n\nDesaparecerá del panel y no se publicará en WordPress.`,
     );
 
     if (!confirmar) return;
@@ -444,7 +447,7 @@ export default function ArticleDashboard({
     setAnulandoId(articulo.id);
     setFeedback({
       type: 'info',
-      message: `Anulando "${articulo.titulo_generado}"...`,
+      message: `Eliminando "${articulo.titulo_generado}"...`,
     });
 
     try {
@@ -462,13 +465,20 @@ export default function ArticleDashboard({
       }
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error || 'No se pudo anular el artículo');
+        throw new Error(data.error || 'No se pudo eliminar el artículo');
       }
 
-      setItems((prev) => prev.filter((item) => item.id !== articulo.id));
+      if (esAprobado) {
+        setApprovedItems((prev) => prev.filter((item) => item.id !== articulo.id));
+      } else {
+        setItems((prev) => prev.filter((item) => item.id !== articulo.id));
+      }
+
       setFeedback({
         type: 'success',
-        message: `Artículo anulado. Ya no aparecerá en la cola de revisión.${mensajeEmailBuzon(data.articulo?.emailBuzon ?? data.emailBuzon)}`,
+        message: esAprobado
+          ? `Artículo eliminado del panel.${mensajeEmailBuzon(data.articulo?.emailBuzon ?? data.emailBuzon)}`
+          : `Artículo anulado. Ya no aparecerá en la cola de revisión.${mensajeEmailBuzon(data.articulo?.emailBuzon ?? data.emailBuzon)}`,
       });
       router.refresh();
     } catch (error) {
@@ -486,7 +496,9 @@ export default function ArticleDashboard({
             key={articulo.id}
             articulo={articulo}
             isPublishing={publishingWebId === articulo.id}
+            isAnulando={anulandoId === articulo.id}
             onPublishWeb={() => handlePublicarEnWeb(articulo)}
+            onDelete={() => handleAnular(articulo)}
           />
         ))}
       </div>

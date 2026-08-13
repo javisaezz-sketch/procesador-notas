@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ContentModal from './ContentModal';
 import PublishModal from './PublishModal';
 import ApprovedArticleCard from './ApprovedArticleCard';
+import ErrorNotaCard from './ErrorNotaCard';
 import MedioLogo, { MedioBadge } from './MedioLogo';
 import { agruparPorMedio, getMedioTheme, ordenarMedios } from '@/lib/medios';
 
@@ -111,11 +112,13 @@ function ArticleCard({ articulo, isPublishing, isAnulando, onView, onPublish, on
 export default function ArticleDashboard({
   articulos = [],
   articulosAprobados = [],
+  notasConError = [],
 }) {
   const router = useRouter();
   const [vistaPanel, setVistaPanel] = useState('pendientes');
   const [items, setItems] = useState(articulos);
   const [approvedItems, setApprovedItems] = useState(articulosAprobados);
+  const [errorItems, setErrorItems] = useState(notasConError);
   const [filtroMedio, setFiltroMedio] = useState('todos');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [publishArticle, setPublishArticle] = useState(null);
@@ -131,7 +134,10 @@ export default function ArticleDashboard({
   const [publishingId, setPublishingId] = useState(null);
   const [publishingWebId, setPublishingWebId] = useState(null);
   const [anulandoId, setAnulandoId] = useState(null);
+  const [reintentandoId, setReintentandoId] = useState(null);
+  const [descartandoId, setDescartandoId] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
 
   useEffect(() => {
     setItems(articulos);
@@ -141,7 +147,28 @@ export default function ArticleDashboard({
     setApprovedItems(articulosAprobados);
   }, [articulosAprobados]);
 
-  const listaActiva = vistaPanel === 'pendientes' ? items : approvedItems;
+  useEffect(() => {
+    setErrorItems(notasConError);
+  }, [notasConError]);
+
+  useEffect(() => {
+    const modalAbierto = Boolean(selectedArticle || publishArticle);
+    if (modalAbierto) return undefined;
+
+    const interval = setInterval(() => {
+      router.refresh();
+      setUltimaActualizacion(new Date());
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [router, selectedArticle, publishArticle]);
+
+  const listaActiva =
+    vistaPanel === 'pendientes'
+      ? items
+      : vistaPanel === 'aprobados'
+        ? approvedItems
+        : errorItems;
 
   const mediosDisponibles = useMemo(() => {
     const map = new Map();
@@ -163,11 +190,12 @@ export default function ArticleDashboard({
 
   const grupos = useMemo(
     () =>
-      vistaPanel === 'pendientes' && filtroMedio === 'todos'
+      filtroMedio === 'todos' &&
+      (vistaPanel === 'pendientes' ||
+        vistaPanel === 'aprobados' ||
+        vistaPanel === 'errores')
         ? agruparPorMedio(itemsFiltrados)
-        : vistaPanel === 'aprobados' && filtroMedio === 'todos'
-          ? agruparPorMedio(itemsFiltrados)
-          : [],
+        : [],
     [itemsFiltrados, filtroMedio, vistaPanel],
   );
 
@@ -421,6 +449,71 @@ export default function ArticleDashboard({
     }
   }
 
+  async function handleReintentarNota(nota) {
+    setReintentandoId(nota.id);
+    setFeedback({
+      type: 'info',
+      message: `Reintentando nota #${nota.id}...`,
+    });
+
+    try {
+      const response = await fetch(`/api/notas/${nota.id}/reintentar`, {
+        method: 'POST',
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo reintentar la nota');
+      }
+
+      setErrorItems((prev) => prev.filter((item) => item.id !== nota.id));
+      setFeedback({
+        type: 'success',
+        message:
+          'Nota devuelta a la cola. El pipeline la procesará en los próximos minutos.',
+      });
+      router.refresh();
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message });
+    } finally {
+      setReintentandoId(null);
+    }
+  }
+
+  async function handleDescartarNota(nota) {
+    const confirmar = window.confirm(
+      `¿Descartar esta nota?\n\nNo se procesará con IA ni volverá a aparecer en Errores IA.`,
+    );
+
+    if (!confirmar) return;
+
+    setDescartandoId(nota.id);
+
+    try {
+      const response = await fetch(`/api/notas/${nota.id}/descartar`, {
+        method: 'POST',
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo descartar la nota');
+      }
+
+      setErrorItems((prev) => prev.filter((item) => item.id !== nota.id));
+      setFeedback({
+        type: 'success',
+        message: 'Nota descartada.',
+      });
+      router.refresh();
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message });
+    } finally {
+      setDescartandoId(null);
+    }
+  }
+
   async function handleAnular(articulo) {
     const esAprobado = articulo.estado === 'publicado';
     const confirmar = window.confirm(
@@ -473,6 +566,22 @@ export default function ArticleDashboard({
     } finally {
       setAnulandoId(null);
     }
+  }
+
+  function renderErrorCards(lista) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {lista.map((nota) => (
+          <ErrorNotaCard
+            key={nota.id}
+            nota={nota}
+            isRetrying={reintentandoId === nota.id || descartandoId === nota.id}
+            onRetry={() => handleReintentarNota(nota)}
+            onDismiss={() => handleDescartarNota(nota)}
+          />
+        ))}
+      </div>
+    );
   }
 
   function renderApprovedCards(lista) {
@@ -552,6 +661,22 @@ export default function ArticleDashboard({
             </span>
           )}
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setVistaPanel('errores');
+            setFiltroMedio('todos');
+          }}
+          className={`shrink-0 rounded-full px-5 py-3 text-sm font-semibold transition sm:py-2.5 ${
+            vistaPanel === 'errores'
+              ? 'bg-slate-900 text-white'
+              : errorItems.length > 0
+                ? 'border border-red-300 bg-red-50 text-red-800 hover:bg-red-100'
+                : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          Errores IA ({errorItems.length})
+        </button>
       </div>
 
       <section className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -562,25 +687,44 @@ export default function ArticleDashboard({
           <h1 className="mt-1 text-3xl font-bold text-slate-900 sm:text-3xl">
             {vistaPanel === 'pendientes'
               ? 'Artículos pendientes de revisión'
-              : 'Borradores aprobados en WordPress'}
+              : vistaPanel === 'aprobados'
+                ? 'Borradores aprobados en WordPress'
+                : 'Notas con error de procesamiento'}
           </h1>
           <p className="mt-2 max-w-2xl text-base text-slate-600 sm:text-base">
             {vistaPanel === 'pendientes'
               ? 'Revisa el contenido, elige categoría y publícalo en la web o déjalo en borrador.'
-              : 'Publica en la web los borradores ya aprobados, sin entrar en WordPress.'}
+              : vistaPanel === 'aprobados'
+                ? 'Publica en la web los borradores ya aprobados, sin entrar en WordPress.'
+                : 'Reintenta las notas que fallaron al generarse con Gemini o descártalas.'}
           </p>
         </div>
-        <div className="inline-flex w-fit shrink-0 items-center rounded-full bg-indigo-50 px-5 py-2.5 text-base font-medium text-indigo-700 ring-1 ring-indigo-100 sm:px-4 sm:py-2 sm:text-sm">
-          {vistaPanel === 'pendientes' ? (
-            <>
-              {items.length} pendiente{items.length === 1 ? '' : 's'}
-            </>
-          ) : (
-            <>
-              {borradoresPendientesWeb} borrador
-              {borradoresPendientesWeb === 1 ? '' : 'es'} por publicar
-            </>
-          )}
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <div className="inline-flex w-fit shrink-0 items-center rounded-full bg-indigo-50 px-5 py-2.5 text-base font-medium text-indigo-700 ring-1 ring-indigo-100 sm:px-4 sm:py-2 sm:text-sm">
+            {vistaPanel === 'pendientes' ? (
+              <>
+                {items.length} pendiente{items.length === 1 ? '' : 's'}
+              </>
+            ) : vistaPanel === 'aprobados' ? (
+              <>
+                {borradoresPendientesWeb} borrador
+                {borradoresPendientesWeb === 1 ? '' : 'es'} por publicar
+              </>
+            ) : (
+              <>
+                {errorItems.length} error{errorItems.length === 1 ? '' : 'es'}
+              </>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 sm:text-right">
+            Auto-refresh cada 30 s
+            {ultimaActualizacion
+              ? ` · ${ultimaActualizacion.toLocaleTimeString('es-ES', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}`
+              : ''}
+          </p>
         </div>
       </section>
 
@@ -651,7 +795,9 @@ export default function ArticleDashboard({
           <p className="text-xl font-semibold text-slate-900 sm:text-lg">
             {vistaPanel === 'pendientes'
               ? 'No hay artículos pendientes'
-              : 'No hay artículos aprobados'}
+              : vistaPanel === 'aprobados'
+                ? 'No hay artículos aprobados'
+                : 'No hay errores de procesamiento'}
           </p>
           {filtroMedio !== 'todos' && (
             <button
@@ -679,14 +825,18 @@ export default function ArticleDashboard({
                 </div>
                 {vistaPanel === 'pendientes'
                   ? renderCards(grupo.articulos)
-                  : renderApprovedCards(grupo.articulos)}
+                  : vistaPanel === 'aprobados'
+                    ? renderApprovedCards(grupo.articulos)
+                    : renderErrorCards(grupo.articulos)}
               </section>
           ))}
         </div>
       ) : vistaPanel === 'pendientes' ? (
         renderCards(itemsFiltrados)
-      ) : (
+      ) : vistaPanel === 'aprobados' ? (
         renderApprovedCards(itemsFiltrados)
+      ) : (
+        renderErrorCards(itemsFiltrados)
       )}
 
       {vistaPanel === 'pendientes' && selectedArticle && (

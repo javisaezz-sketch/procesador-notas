@@ -1,18 +1,24 @@
 import ArticleDashboard from '../components/ArticleDashboard';
 import LogoutButton from '../components/LogoutButton';
-import { getArticulosAprobados, getArticulosPendientes } from '../lib/supabase';
+import {
+  getArticulosAprobados,
+  getArticulosPendientes,
+  getNotasConError,
+} from '../lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   let articulos = [];
   let articulosAprobados = [];
+  let notasConError = [];
   let error = null;
 
   try {
-    [articulos, articulosAprobados] = await Promise.all([
+    [articulos, articulosAprobados, notasConError] = await Promise.all([
       getArticulosPendientes(),
       getArticulosAprobados(),
+      getNotasConError(),
     ]);
   } catch (err) {
     error = err.message;
@@ -46,6 +52,7 @@ export default async function DashboardPage() {
           <ArticleDashboard
             articulos={articulos}
             articulosAprobados={articulosAprobados}
+            notasConError={notasConError}
           />
         )}
       </div>

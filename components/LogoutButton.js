@@ -24,7 +24,7 @@ export default function LogoutButton() {
       type="button"
       onClick={handleLogout}
       disabled={salindo}
-      className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 sm:text-sm"
+      className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 sm:px-4 sm:py-2"
     >
       {salindo ? 'Saliendo...' : 'Cerrar sesión'}
     </button>

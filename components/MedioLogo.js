@@ -7,10 +7,10 @@ import {
 } from '@/lib/medios';
 
 const TAMANOS = {
-  xs: 'h-5 w-5',
-  sm: 'h-7 w-7',
-  md: 'h-9 w-9',
-  lg: 'h-11 w-11',
+  xs: 'h-6 w-6',
+  sm: 'h-8 w-8',
+  md: 'h-10 w-10',
+  lg: 'h-12 w-12',
 };
 
 export default function MedioLogo({ medio, size = 'sm', className = '' }) {
@@ -50,7 +50,7 @@ export function MedioBadge({ medio, compact = false, className = '' }) {
 
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 sm:px-3 sm:text-sm ${theme.badge} ${className}`}
+      className={`inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 sm:px-3 sm:py-1 ${theme.badge} ${className}`}
     >
       <MedioLogo medio={medio} size="sm" />
       {!compact && (

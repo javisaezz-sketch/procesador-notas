@@ -15,20 +15,20 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
         onClick={onClose}
       />
 
-      <div className="relative z-10 max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:max-w-lg sm:rounded-2xl sm:p-6">
-        <p className="text-sm font-medium text-indigo-600">Publicar en WordPress</p>
+      <div className="relative z-10 max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-6 shadow-2xl sm:max-w-lg sm:rounded-2xl sm:p-6">
+        <p className="text-base font-medium text-indigo-600 sm:text-sm">Publicar en WordPress</p>
         <div className="mt-2">
           <MedioBadge medio={articulo.medios} />
         </div>
-        <h3 className="mt-3 text-lg font-bold leading-snug text-slate-900 sm:text-xl">
+        <h3 className="mt-3 text-xl font-bold leading-snug text-slate-900 sm:text-xl">
           {articulo.titulo_generado}
         </h3>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-base text-slate-600 sm:text-sm">
           Se creará como <strong>borrador</strong> en WordPress. Elige la categoría:
         </p>
 
         {articulo.imagen_destacada_url && (
-          <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-base text-blue-800 sm:text-sm">
             La primera foto de la nota se usará como imagen destacada.
             {(articulo.imagenes_adicionales ?? 0) > 0 ? (
               <>
@@ -43,14 +43,14 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
         )}
 
         {!articulo.imagen_destacada_url && (
-          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-base text-amber-800 sm:text-sm">
             Este artículo no tiene imagen destacada. El borrador se publicará sin foto
             a menos que el email traiga imágenes adjuntas o incrustadas en el HTML.
           </p>
         )}
 
         {articulo.email_notificacion && (
-          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-base text-emerald-800 sm:text-sm">
             El email de la agencia (<strong>{articulo.email_notificacion}</strong>) quedará
             guardado en el borrador. La notificación se enviará cuando pulses{' '}
             <strong>Publicar</strong> en WordPress.
@@ -70,17 +70,17 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
             {categorias.map((cat) => (
               <label
                 key={cat.slug}
-                className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-indigo-300 hover:bg-indigo-50"
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-4 transition hover:border-indigo-300 hover:bg-indigo-50 sm:py-3"
               >
                 <input
                   type="radio"
                   name="categoria"
                   value={cat.slug}
                   required
-                  className="h-4 w-4 text-indigo-600"
+                  className="h-5 w-5 shrink-0 text-indigo-600 sm:h-4 sm:w-4"
                 />
-                <span className="text-sm font-medium text-slate-800">{cat.nombre}</span>
-                <span className="ml-auto text-xs text-slate-400">{cat.slug}</span>
+                <span className="text-base font-medium text-slate-800 sm:text-sm">{cat.nombre}</span>
+                <span className="ml-auto hidden text-xs text-slate-400 sm:inline">{cat.slug}</span>
               </label>
             ))}
           </fieldset>
@@ -90,14 +90,14 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
               type="button"
               onClick={onClose}
               disabled={isPublishing}
-              className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50 sm:py-2.5 sm:text-sm"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isPublishing}
-              className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400"
+              className="rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
             >
               {isPublishing ? 'Publicando...' : 'Publicar borrador'}
             </button>

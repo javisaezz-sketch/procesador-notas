@@ -16,12 +16,12 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-7xl px-3 py-6 sm:px-6 sm:py-10 lg:px-8">
-        <header className="mb-8 flex flex-col items-center px-2 text-center sm:mb-10">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+        <header className="mb-8 flex flex-col items-center px-1 text-center sm:mb-10 sm:px-2">
           <div className="flex w-full max-w-7xl items-start justify-end">
             <LogoutButton />
           </div>
-          <p className="text-[0.65rem] font-semibold uppercase leading-relaxed tracking-[0.15em] text-slate-700 sm:text-sm sm:tracking-[0.2em]">
+          <p className="text-xs font-semibold uppercase leading-relaxed tracking-[0.12em] text-slate-700 sm:text-sm sm:tracking-[0.2em]">
             PANEL SAEZ&amp;NAVES MEDIA GROUP
           </p>
           <img
@@ -29,14 +29,14 @@ export default async function DashboardPage() {
             alt="SAEZ & NAVES"
             width={300}
             height={85}
-            className="mt-3 h-auto w-[min(100%,220px)] sm:mt-4 sm:w-[300px]"
+            className="mt-3 h-auto w-[min(100%,260px)] sm:mt-4 sm:w-[300px]"
           />
         </header>
 
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-5 text-red-700">
-            <p className="font-semibold">No se pudieron cargar los artículos</p>
-            <p className="mt-1 text-sm">{error}</p>
+            <p className="text-lg font-semibold sm:text-base">No se pudieron cargar los artículos</p>
+            <p className="mt-1 text-base sm:text-sm">{error}</p>
           </div>
         ) : (
           <ArticleDashboard articulos={articulos} />

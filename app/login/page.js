@@ -42,9 +42,9 @@ function LoginForm() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-8">
         <header className="mb-8 text-center">
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-slate-700 sm:text-xs sm:tracking-[0.2em]">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700 sm:text-xs sm:tracking-[0.2em]">
             PANEL SAEZ&amp;NAVES MEDIA GROUP
           </p>
           <img
@@ -52,19 +52,19 @@ function LoginForm() {
             alt="SAEZ & NAVES"
             width={300}
             height={85}
-            className="mx-auto mt-3 h-auto w-[min(100%,220px)] sm:mt-4 sm:w-[240px]"
+            className="mx-auto mt-3 h-auto w-[min(100%,260px)] sm:mt-4 sm:w-[240px]"
           />
-          <h1 className="mt-6 text-xl font-bold text-slate-900">Acceso al panel</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <h1 className="mt-6 text-2xl font-bold text-slate-900 sm:text-xl">Acceso al panel</h1>
+          <p className="mt-2 text-base text-slate-600 sm:text-sm">
             Introduce tus credenciales para revisar y publicar artículos.
           </p>
         </header>
 
-        <form className="space-y-4" onSubmit={handleSubmit} autoComplete="on">
+        <form className="space-y-5" onSubmit={handleSubmit} autoComplete="on">
           <div>
             <label
               htmlFor="usuario"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
+              className="mb-2 block text-base font-medium text-slate-700 sm:text-sm"
             >
               Usuario
             </label>
@@ -76,14 +76,14 @@ function LoginForm() {
               required
               value={usuario}
               onChange={(event) => setUsuario(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none ring-indigo-500 focus:ring-2"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-base outline-none ring-indigo-500 focus:ring-2 sm:py-3 sm:text-sm"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
+              className="mb-2 block text-base font-medium text-slate-700 sm:text-sm"
             >
               Contraseña
             </label>
@@ -95,22 +95,22 @@ function LoginForm() {
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none ring-indigo-500 focus:ring-2"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-base outline-none ring-indigo-500 focus:ring-2 sm:py-3 sm:text-sm"
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-slate-600">
+          <label className="flex items-center gap-3 text-base text-slate-600 sm:text-sm">
             <input
               type="checkbox"
               checked={recordar}
               onChange={(event) => setRecordar(event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+              className="h-5 w-5 rounded border-slate-300 text-indigo-600 sm:h-4 sm:w-4"
             />
             Recordarme en este dispositivo (30 días)
           </label>
 
           {error && (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-base text-red-700 sm:text-sm">
               {error}
             </p>
           )}
@@ -118,7 +118,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={enviando}
-            className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400"
+            className="w-full rounded-xl bg-indigo-600 px-4 py-4 text-base font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-3 sm:text-sm"
           >
             {enviando ? 'Entrando...' : 'Entrar al panel'}
           </button>

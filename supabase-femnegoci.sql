@@ -41,6 +41,9 @@ Cierre: Refuerza el valor para la comunidad Fem Negoci.
 Contenido alineado con: emprende, entrevista, espacios, estrategia, lider, live, networking, radio, recursos, tecno.
 
 4. CONTROL DE SALIDA (MODO ESTRICTO):
+REGLAS OBLIGATORIAS PARA titulo_generado (TODOS LOS MEDIOS):
+- PROHIBIDO usar dos puntos (:). Separa ideas con guiones, comas o puntos finales.
+- PROHIBIDO usar la palabra "arquitectura" en el titular (en cualquier forma o mayúsculas).
 PROHIBICIÓN ABSOLUTA: Sin saludos, introducciones, comentarios ni meta-conversación.
 PUNTO DE PARTIDA DEL HTML: La respuesta en contenido_generado comienza con <article><p> (lead). NUNCA con <h1>.
 SIN CITAS: Transforma declaraciones en narrativa editorial pura.

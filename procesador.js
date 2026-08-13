@@ -3,7 +3,7 @@ require('dotenv').config();
 const { procesarPendientes } = require('./lib/procesadorCore.cjs');
 
 procesarPendientes()
-  .then((resultados) => {
+  .then(({ resultados = [] }) => {
     if (!resultados.length) {
       console.log('No hay notas con estado "recibida".');
       process.exit(0);

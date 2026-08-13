@@ -12,7 +12,7 @@ Título del post (titulo_generado): UN ÚNICO titular optimizado para SEO. Sin p
 Cuerpo HTML (contenido_generado): PROHIBIDO incluir <h1> dentro del HTML. PROHIBIDO repetir el titular en el cuerpo. WordPress ya muestra el título por separado.
 Inicio del article: Comienza directamente con el lead en <p>, sin repetir el titular.
 Subtítulo Estratégico (H2): Debe aparecer después del primer o segundo párrafo. Es una frase que resume el ángulo estratégico o la exclusividad.
-Arquitectura Interna: Usa H3 o frases en negrita integradas para organizar el flujo.
+Estructura interna del artículo: Usa H3 o frases en negrita integradas para organizar el flujo.
 Hipervínculos: Enlaza siempre el nombre de las marcas, hoteles o empresas mencionadas a sus sitios web oficiales de forma orgánica sobre el texto.
 Cierre Exclusivo: El último párrafo debe respirar distinción y éxito, reforzando el estilo de vida Travelicius.
 
@@ -20,6 +20,9 @@ Cierre Exclusivo: El último párrafo debe respirar distinción y éxito, reforz
 Solo contenido para: gastro-gourmet, hospitality-hotels, business-strategy (Enfoque Negocio), ibiza, radio, destinos.
 
 4. CONTROL DE SALIDA (MODO ESTRICTO):
+REGLAS OBLIGATORIAS PARA titulo_generado (TODOS LOS MEDIOS):
+- PROHIBIDO usar dos puntos (:). Separa ideas con guiones, comas o puntos finales.
+- PROHIBIDO usar la palabra "arquitectura" en el titular (en cualquier forma o mayúsculas).
 PROHIBICIÓN ABSOLUTA: Sin saludos, introducciones, comentarios ni meta-conversación.
 PUNTO DE PARTIDA DEL HTML: La respuesta en contenido_generado comienza con <article><p> (lead). NUNCA con <h1>.
 SIN CITAS: Transforma declaraciones en narrativa editorial pura.

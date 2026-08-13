@@ -1,0 +1,33 @@
+{
+  "name": "procesador-notas",
+  "version": "1.0.0",
+  "description": "Procesa notas de prensa con Gemini y las guarda como artículos en Supabase",
+  "main": "procesador.js",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3001",
+    "dev:3000": "next dev --hostname 127.0.0.1 --port 3000",
+    "build": "next build",
+    "start:web": "next start --hostname 127.0.0.1 --port 3001",
+    "procesar": "node procesador.js",
+    "email": "node receptor-email.js",
+    "imagenes": "node reextraer-imagenes.js",
+    "pipeline": "node pipeline.js",
+    "todo": "node pipeline.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7",
+    "imapflow": "^1.0.184",
+    "mailparser": "^3.7.2",
+    "node-pop3": "^0.10.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
+  }
+}

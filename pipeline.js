@@ -55,13 +55,19 @@ async function main() {
   console.log('🤖 PASO 2/2 — Generar artículos con IA');
   let articulos = [];
   let erroresGemini = [];
+  let notasReactivadas = 0;
 
   try {
     const resultado = await procesarPendientes();
     articulos = resultado.resultados ?? [];
     erroresGemini = resultado.errores ?? [];
+    notasReactivadas = resultado.reactivadas?.length ?? 0;
 
-    if (articulos.length === 0 && erroresGemini.length === 0) {
+    if (notasReactivadas > 0) {
+      console.log(`   → ${notasReactivadas} nota(s) reactivadas automáticamente desde Errores IA`);
+    }
+
+    if (articulos.length === 0 && erroresGemini.length === 0 && notasReactivadas === 0) {
       console.log('   → No había notas pendientes de procesar.');
     } else {
       articulos.forEach((a) => {
@@ -100,6 +106,7 @@ async function main() {
       imagenes: emailStats.imagenes,
     },
     articulosGenerados: articulos.length,
+    notasReactivadas,
     dashboardUrl: DASHBOARD_URL,
   };
 

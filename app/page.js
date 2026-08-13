@@ -1,15 +1,19 @@
 import ArticleDashboard from '../components/ArticleDashboard';
 import LogoutButton from '../components/LogoutButton';
-import { getArticulosPendientes } from '../lib/supabase';
+import { getArticulosAprobados, getArticulosPendientes } from '../lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   let articulos = [];
+  let articulosAprobados = [];
   let error = null;
 
   try {
-    articulos = await getArticulosPendientes();
+    [articulos, articulosAprobados] = await Promise.all([
+      getArticulosPendientes(),
+      getArticulosAprobados(),
+    ]);
   } catch (err) {
     error = err.message;
   }
@@ -39,7 +43,10 @@ export default async function DashboardPage() {
             <p className="mt-1 text-base sm:text-sm">{error}</p>
           </div>
         ) : (
-          <ArticleDashboard articulos={articulos} />
+          <ArticleDashboard
+            articulos={articulos}
+            articulosAprobados={articulosAprobados}
+          />
         )}
       </div>
     </main>

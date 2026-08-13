@@ -81,24 +81,38 @@ export default function ContentModal({
           </div>
 
           <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-            <label
-              htmlFor="email-notificacion"
-              className="mb-1 block text-base font-semibold text-emerald-900 sm:text-sm"
-            >
-              Email de notificación a la agencia
-            </label>
-            <p className="mb-3 text-sm text-emerald-800">
-              Se enviará cuando publiques el borrador en WordPress. Revísalo y
-              corrígelo si hace falta.
-            </p>
-            <input
-              id="email-notificacion"
-              type="email"
-              value={emailNotificacion}
-              onChange={(event) => onEmailNotificacionChange(event.target.value)}
-              placeholder="Sin email detectado en la nota"
-              className="w-full rounded-xl border border-emerald-300 bg-white px-4 py-3.5 text-base text-slate-900 outline-none ring-emerald-500 focus:ring-2 sm:py-3 sm:text-sm"
-            />
+            {articulo.sin_notificacion ? (
+              <>
+                <p className="text-base font-semibold text-emerald-900 sm:text-sm">
+                  Sin notificación a agencia
+                </p>
+                <p className="mt-2 text-sm text-emerald-800">
+                  Este artículo se generó desde un enlace. No se enviará email
+                  a ninguna agencia al publicarlo.
+                </p>
+              </>
+            ) : (
+              <>
+                <label
+                  htmlFor="email-notificacion"
+                  className="mb-1 block text-base font-semibold text-emerald-900 sm:text-sm"
+                >
+                  Email de notificación a la agencia
+                </label>
+                <p className="mb-3 text-sm text-emerald-800">
+                  Se enviará cuando publiques el borrador en WordPress. Revísalo y
+                  corrígelo si hace falta.
+                </p>
+                <input
+                  id="email-notificacion"
+                  type="email"
+                  value={emailNotificacion}
+                  onChange={(event) => onEmailNotificacionChange(event.target.value)}
+                  placeholder="Sin email detectado en la nota"
+                  className="w-full rounded-xl border border-emerald-300 bg-white px-4 py-3.5 text-base text-slate-900 outline-none ring-emerald-500 focus:ring-2 sm:py-3 sm:text-sm"
+                />
+              </>
+            )}
           </div>
 
           <div className="mb-3 flex gap-2">

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import ContentModal from './ContentModal';
 import PublishModal from './PublishModal';
+import ApprovedArticleCard, { esBorradorWordPress } from './ApprovedArticleCard';
 import MedioLogo, { MedioBadge } from './MedioLogo';
 import { agruparPorMedio, getMedioTheme, ordenarMedios } from '@/lib/medios';
 
@@ -91,7 +92,7 @@ function ArticleCard({ articulo, isPublishing, isAnulando, onView, onPublish, on
             disabled={isPublishing || isAnulando}
             className="flex-1 rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
           >
-            {isPublishing ? 'Publicando...' : 'Aprobar y publicar'}
+            {isPublishing ? 'Publicando...' : 'Aprobar'}
           </button>
         </div>
         <button
@@ -107,9 +108,14 @@ function ArticleCard({ articulo, isPublishing, isAnulando, onView, onPublish, on
   );
 }
 
-export default function ArticleDashboard({ articulos = [] }) {
+export default function ArticleDashboard({
+  articulos = [],
+  articulosAprobados = [],
+}) {
   const router = useRouter();
+  const [vistaPanel, setVistaPanel] = useState('pendientes');
   const [items, setItems] = useState(articulos);
+  const [approvedItems, setApprovedItems] = useState(articulosAprobados);
   const [filtroMedio, setFiltroMedio] = useState('todos');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [publishArticle, setPublishArticle] = useState(null);
@@ -123,6 +129,7 @@ export default function ArticleDashboard({ articulos = [] }) {
   const [guardandoId, setGuardandoId] = useState(null);
   const [saveError, setSaveError] = useState('');
   const [publishingId, setPublishingId] = useState(null);
+  const [publishingWebId, setPublishingWebId] = useState(null);
   const [anulandoId, setAnulandoId] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
@@ -130,10 +137,16 @@ export default function ArticleDashboard({ articulos = [] }) {
     setItems(articulos);
   }, [articulos]);
 
+  useEffect(() => {
+    setApprovedItems(articulosAprobados);
+  }, [articulosAprobados]);
+
+  const listaActiva = vistaPanel === 'pendientes' ? items : approvedItems;
+
   const mediosDisponibles = useMemo(() => {
     const map = new Map();
 
-    for (const articulo of items) {
+    for (const articulo of listaActiva) {
       if (!articulo.medio_id || !articulo.medios) continue;
       map.set(articulo.medio_id, articulo.medios);
     }
@@ -141,16 +154,26 @@ export default function ArticleDashboard({ articulos = [] }) {
     return ordenarMedios(
       [...map.entries()].map(([id, medio]) => ({ id, ...medio })),
     );
-  }, [items]);
+  }, [listaActiva]);
 
   const itemsFiltrados = useMemo(() => {
-    if (filtroMedio === 'todos') return items;
-    return items.filter((item) => String(item.medio_id) === filtroMedio);
-  }, [items, filtroMedio]);
+    if (filtroMedio === 'todos') return listaActiva;
+    return listaActiva.filter((item) => String(item.medio_id) === filtroMedio);
+  }, [listaActiva, filtroMedio]);
 
   const grupos = useMemo(
-    () => (filtroMedio === 'todos' ? agruparPorMedio(itemsFiltrados) : []),
-    [itemsFiltrados, filtroMedio],
+    () =>
+      vistaPanel === 'pendientes' && filtroMedio === 'todos'
+        ? agruparPorMedio(itemsFiltrados)
+        : vistaPanel === 'aprobados' && filtroMedio === 'todos'
+          ? agruparPorMedio(itemsFiltrados)
+          : [],
+    [itemsFiltrados, filtroMedio, vistaPanel],
+  );
+
+  const borradoresPendientesWeb = useMemo(
+    () => approvedItems.filter((item) => esBorradorWordPress(item)).length,
+    [approvedItems],
   );
 
   function openContentModal(articulo) {
@@ -209,7 +232,9 @@ export default function ArticleDashboard({ articulos = [] }) {
         body: JSON.stringify({
           titulo_generado: editedTitle,
           contenido_generado: editedContent,
-          email_notificacion: editedEmail,
+          ...(articulo.sin_notificacion
+            ? {}
+            : { email_notificacion: editedEmail }),
           imagen_destacada_url: destacadaUrl,
           imagenes_publicar_urls: publicarUrls,
         }),
@@ -274,18 +299,35 @@ export default function ArticleDashboard({ articulos = [] }) {
     }
   }
 
-  async function handlePublicar(articulo, categoriaSlug) {
+  function buildApprovedItem(articulo, data, publicadoEnWeb) {
+    return {
+      ...articulo,
+      estado: 'publicado',
+      wp_post_id: data.wordpressPostId ?? data.articulo?.wp_post_id ?? articulo.wp_post_id,
+      wp_post_url:
+        data.wordpressPostUrl ??
+        data.articulo?.wp_post_url ??
+        articulo.wp_post_url,
+      wp_post_status: publicadoEnWeb
+        ? 'publish'
+        : data.articulo?.wp_post_status ?? 'draft',
+    };
+  }
+
+  async function handlePublicar(articulo, categoriaSlug, { publicarEnWeb = false } = {}) {
     setPublishingId(articulo.id);
     setFeedback({
       type: 'info',
-      message: `Publicando "${articulo.titulo_generado}" en ${getMedioNombre(articulo)}...`,
+      message: publicarEnWeb
+        ? `Publicando "${articulo.titulo_generado}" en la web...`
+        : `Enviando "${articulo.titulo_generado}" como borrador a ${getMedioNombre(articulo)}...`,
     });
 
     try {
       const response = await fetch(`/api/articulos/${articulo.id}/publicar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categoriaSlug }),
+        body: JSON.stringify({ categoriaSlug, publicarEnWeb }),
       });
 
       const raw = await response.text();
@@ -301,20 +343,94 @@ export default function ArticleDashboard({ articulos = [] }) {
         throw new Error(data.error || 'No se pudo publicar el artículo');
       }
 
+      const aprobado = buildApprovedItem(articulo, data, publicarEnWeb);
+
       setItems((prev) => prev.filter((item) => item.id !== articulo.id));
-      setPublishArticle(null);
-      setFeedback({
-        type: 'success',
-        message:
-          `Publicado en ${data.medio} → categoría "${data.categoria}"${data.imagenDestacada ? ' con imagen destacada' : ''}${data.emailNotificacion ? ` · Notificar a ${data.emailNotificacion}` : ''}.${mensajeEmailBuzon(data.emailBuzon)}`,
-        link: data.wordpressPostUrl,
-        linkLabel: 'Abrir borrador en WordPress',
+      setApprovedItems((prev) => {
+        const sinDuplicado = prev.filter((item) => item.id !== articulo.id);
+        return [aprobado, ...sinDuplicado];
       });
+      setPublishArticle(null);
+      setVistaPanel('aprobados');
+
+      if (publicadoEnWeb) {
+        setFeedback({
+          type: 'success',
+          message: `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,
+          link: data.wordpressPostUrl,
+          linkLabel: 'Ver artículo publicado',
+        });
+      } else {
+        setFeedback({
+          type: 'success',
+          message: `Borrador creado en ${data.medio} → categoría "${data.categoria}". Puedes publicarlo en la web desde la pestaña Aprobados.${data.emailNotificacion ? ` Notificará a ${data.emailNotificacion} al publicar.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,
+          link: data.wordpressPostUrl,
+          linkLabel: 'Ver borrador en WordPress',
+        });
+      }
+
       router.refresh();
     } catch (error) {
       setFeedback({ type: 'error', message: error.message });
     } finally {
       setPublishingId(null);
+    }
+  }
+
+  async function handlePublicarEnWeb(articulo) {
+    const confirmar = window.confirm(
+      `¿Publicar "${articulo.titulo_generado}" en ${getMedioNombre(articulo)}?\n\nPasará de borrador a publicado en la web.`,
+    );
+
+    if (!confirmar) return;
+
+    setPublishingWebId(articulo.id);
+    setFeedback({
+      type: 'info',
+      message: `Publicando "${articulo.titulo_generado}" en la web...`,
+    });
+
+    try {
+      const response = await fetch(`/api/articulos/${articulo.id}/publicar-en-web`, {
+        method: 'POST',
+      });
+
+      const raw = await response.text();
+      let data = {};
+
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(raw || 'Respuesta inválida del servidor');
+      }
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo publicar en la web');
+      }
+
+      setApprovedItems((prev) =>
+        prev.map((item) =>
+          item.id === articulo.id
+            ? {
+                ...item,
+                wp_post_status: data.articulo?.wp_post_status ?? 'publish',
+                wp_post_url: data.wordpressPostUrl ?? item.wp_post_url,
+              }
+            : item,
+        ),
+      );
+
+      setFeedback({
+        type: 'success',
+        message: `Publicado en ${data.medio}. Ya está visible en la web.`,
+        link: data.wordpressPostUrl,
+        linkLabel: 'Ver artículo publicado',
+      });
+      router.refresh();
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message });
+    } finally {
+      setPublishingWebId(null);
     }
   }
 
@@ -362,6 +478,21 @@ export default function ArticleDashboard({ articulos = [] }) {
     }
   }
 
+  function renderApprovedCards(lista) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {lista.map((articulo) => (
+          <ApprovedArticleCard
+            key={articulo.id}
+            articulo={articulo}
+            isPublishing={publishingWebId === articulo.id}
+            onPublishWeb={() => handlePublicarEnWeb(articulo)}
+          />
+        ))}
+      </div>
+    );
+  }
+
   function renderCards(lista) {
     return (
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -387,24 +518,69 @@ export default function ArticleDashboard({ articulos = [] }) {
 
   return (
     <>
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+        <button
+          type="button"
+          onClick={() => {
+            setVistaPanel('pendientes');
+            setFiltroMedio('todos');
+          }}
+          className={`shrink-0 rounded-full px-5 py-3 text-sm font-semibold transition sm:py-2.5 ${
+            vistaPanel === 'pendientes'
+              ? 'bg-slate-900 text-white'
+              : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          Pendientes ({items.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setVistaPanel('aprobados');
+            setFiltroMedio('todos');
+          }}
+          className={`shrink-0 rounded-full px-5 py-3 text-sm font-semibold transition sm:py-2.5 ${
+            vistaPanel === 'aprobados'
+              ? 'bg-slate-900 text-white'
+              : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          Aprobados ({approvedItems.length})
+          {borradoresPendientesWeb > 0 && (
+            <span className="ml-2 opacity-80">
+              · {borradoresPendientesWeb} borrador
+              {borradoresPendientesWeb === 1 ? '' : 'es'}
+            </span>
+          )}
+        </button>
+      </div>
+
       <section className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-medium uppercase tracking-wide text-indigo-600 sm:text-sm">
             Panel editorial
           </p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900 sm:text-3xl">
-            Artículos pendientes de revisión
+            {vistaPanel === 'pendientes'
+              ? 'Artículos pendientes de revisión'
+              : 'Borradores aprobados en WordPress'}
           </h1>
           <p className="mt-2 max-w-2xl text-base text-slate-600 sm:text-base">
-            Revisa el contenido por medio, elige categoría y publica como borrador en WordPress.
+            {vistaPanel === 'pendientes'
+              ? 'Revisa el contenido, elige categoría y publícalo en la web o déjalo en borrador.'
+              : 'Publica en la web los borradores ya aprobados, sin entrar en WordPress.'}
           </p>
         </div>
         <div className="inline-flex w-fit shrink-0 items-center rounded-full bg-indigo-50 px-5 py-2.5 text-base font-medium text-indigo-700 ring-1 ring-indigo-100 sm:px-4 sm:py-2 sm:text-sm">
-          {items.length} pendiente{items.length === 1 ? '' : 's'}
-          {mediosDisponibles.length > 1 && (
-            <span className="ml-2 text-indigo-500">
-              · {mediosDisponibles.length} medios
-            </span>
+          {vistaPanel === 'pendientes' ? (
+            <>
+              {items.length} pendiente{items.length === 1 ? '' : 's'}
+            </>
+          ) : (
+            <>
+              {borradoresPendientesWeb} borrador
+              {borradoresPendientesWeb === 1 ? '' : 'es'} por publicar
+            </>
           )}
         </div>
       </section>
@@ -420,12 +596,12 @@ export default function ArticleDashboard({ articulos = [] }) {
                 : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
             }`}
           >
-            Todos ({items.length})
+            Todos ({listaActiva.length})
           </button>
 
           {mediosDisponibles.map((medio) => {
             const theme = getMedioTheme(medio);
-            const count = items.filter((item) => item.medio_id === medio.id).length;
+            const count = listaActiva.filter((item) => item.medio_id === medio.id).length;
 
             return (
               <button
@@ -474,7 +650,9 @@ export default function ArticleDashboard({ articulos = [] }) {
       {itemsFiltrados.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
           <p className="text-xl font-semibold text-slate-900 sm:text-lg">
-            No hay artículos pendientes
+            {vistaPanel === 'pendientes'
+              ? 'No hay artículos pendientes'
+              : 'No hay artículos aprobados'}
           </p>
           {filtroMedio !== 'todos' && (
             <button
@@ -500,15 +678,19 @@ export default function ArticleDashboard({ articulos = [] }) {
                     {grupo.articulos.length === 1 ? '' : 's'}
                   </span>
                 </div>
-                {renderCards(grupo.articulos)}
+                {vistaPanel === 'pendientes'
+                  ? renderCards(grupo.articulos)
+                  : renderApprovedCards(grupo.articulos)}
               </section>
           ))}
         </div>
-      ) : (
+      ) : vistaPanel === 'pendientes' ? (
         renderCards(itemsFiltrados)
+      ) : (
+        renderApprovedCards(itemsFiltrados)
       )}
 
-      {selectedArticle && (
+      {vistaPanel === 'pendientes' && selectedArticle && (
         <ContentModal
           articulo={selectedArticle}
           title={editedTitle}
@@ -530,12 +712,14 @@ export default function ArticleDashboard({ articulos = [] }) {
         />
       )}
 
-      {publishArticle && (
+      {vistaPanel === 'pendientes' && publishArticle && (
         <PublishModal
           articulo={publishArticle}
           isPublishing={publishingId === publishArticle.id}
           onClose={() => setPublishArticle(null)}
-          onConfirm={(categoriaSlug) => handlePublicar(publishArticle, categoriaSlug)}
+          onConfirm={(categoriaSlug, opciones) =>
+            handlePublicar(publishArticle, categoriaSlug, opciones)
+          }
         />
       )}
     </>

@@ -12,3 +12,6 @@ ADD COLUMN IF NOT EXISTS imagenes_publicar_urls JSONB;
 
 ALTER TABLE articulos
 ADD COLUMN IF NOT EXISTS email_notificacion TEXT;
+
+ALTER TABLE articulos
+ADD COLUMN IF NOT EXISTS wp_post_status VARCHAR(20) DEFAULT 'draft';

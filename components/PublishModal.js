@@ -1,9 +1,11 @@
 'use client';
 
+import { useRef } from 'react';
 import { getCategoriasMedio } from '@/lib/medios';
 import { MedioBadge } from './MedioLogo';
 
 export default function PublishModal({ articulo, onClose, onConfirm, isPublishing }) {
+  const formRef = useRef(null);
   const categorias = getCategoriasMedio(articulo.medios);
   const totalPublicar = Array.isArray(articulo.imagenes_publicar_urls)
     ? articulo.imagenes_publicar_urls.length
@@ -13,6 +15,20 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
   const galeriaCount = articulo.imagen_destacada_url
     ? Math.max(totalPublicar - 1, articulo.imagenes_adicionales ?? 0)
     : Math.max(totalPublicar, 0);
+
+  function enviar(publicarEnWeb) {
+    if (!formRef.current) return;
+
+    const formData = new FormData(formRef.current);
+    const categoriaSlug = formData.get('categoria');
+
+    if (!categoriaSlug) {
+      formRef.current.reportValidity();
+      return;
+    }
+
+    onConfirm(String(categoriaSlug), { publicarEnWeb });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
@@ -24,7 +40,9 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
       />
 
       <div className="relative z-10 max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-6 shadow-2xl sm:max-w-lg sm:rounded-2xl sm:p-6">
-        <p className="text-base font-medium text-indigo-600 sm:text-sm">Publicar en WordPress</p>
+        <p className="text-base font-medium text-indigo-600 sm:text-sm">
+          Enviar a WordPress
+        </p>
         <div className="mt-2">
           <MedioBadge medio={articulo.medios} />
         </div>
@@ -32,7 +50,7 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
           {articulo.titulo_generado}
         </h3>
         <p className="mt-2 text-base text-slate-600 sm:text-sm">
-          Se creará como <strong>borrador</strong> en WordPress. Elige la categoría:
+          Elige categoría y cómo quieres publicarlo:
         </p>
 
         {articulo.imagen_destacada_url && (
@@ -59,28 +77,25 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
 
         {!articulo.imagen_destacada_url && totalPublicar === 0 && (
           <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-base text-amber-800 sm:text-sm">
-            Este artículo no tiene imagen destacada. El borrador se publicará sin foto
+            Este artículo no tiene imagen destacada. Se publicará sin foto
             a menos que el email traiga imágenes adjuntas o incrustadas en el HTML.
           </p>
         )}
 
-        {articulo.email_notificacion && (
+        {articulo.email_notificacion && !articulo.sin_notificacion && (
           <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-base text-emerald-800 sm:text-sm">
             El email de la agencia (<strong>{articulo.email_notificacion}</strong>) quedará
-            guardado en el borrador. La notificación se enviará cuando pulses{' '}
-            <strong>Publicar</strong> en WordPress.
+            guardado en WordPress. La notificación se enviará al publicar en la web.
           </p>
         )}
 
-        <form
-          className="mt-5 space-y-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const formData = new FormData(event.currentTarget);
-            const categoriaSlug = formData.get('categoria');
-            if (categoriaSlug) onConfirm(String(categoriaSlug));
-          }}
-        >
+        {articulo.sin_notificacion && (
+          <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-base text-slate-700 sm:text-sm">
+            Artículo desde enlace: no se notificará a ninguna agencia.
+          </p>
+        )}
+
+        <form ref={formRef} className="mt-5 space-y-5" onSubmit={(event) => event.preventDefault()}>
           <fieldset className="space-y-2">
             {categorias.map((cat) => (
               <label
@@ -100,7 +115,23 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
             ))}
           </fieldset>
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => enviar(true)}
+              disabled={isPublishing}
+              className="rounded-xl bg-green-600 px-4 py-3.5 text-base font-semibold text-white hover:bg-green-700 disabled:bg-green-400 sm:py-2.5 sm:text-sm"
+            >
+              {isPublishing ? 'Publicando...' : 'Publicar en la web'}
+            </button>
+            <button
+              type="button"
+              onClick={() => enviar(false)}
+              disabled={isPublishing}
+              className="rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
+            >
+              {isPublishing ? 'Guardando...' : 'Solo borrador (publicar después)'}
+            </button>
             <button
               type="button"
               onClick={onClose}
@@ -108,13 +139,6 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
               className="rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50 sm:py-2.5 sm:text-sm"
             >
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isPublishing}
-              className="rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
-            >
-              {isPublishing ? 'Publicando...' : 'Publicar borrador'}
             </button>
           </div>
         </form>

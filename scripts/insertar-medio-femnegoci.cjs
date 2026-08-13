@@ -27,11 +27,23 @@ async function main() {
     { slug: 'tecno', nombre: 'Tecnología' },
   ];
 
+  const { data: referencia } = await supabase
+    .from('medios')
+    .select('api_user, api_password')
+    .eq('slug', 'travelicius')
+    .maybeSingle();
+
   const { data: existente } = await supabase
     .from('medios')
     .select('id, slug, api_user, api_password')
     .eq('slug', 'femnegoci')
     .maybeSingle();
+
+  const wpPendiente =
+    !existente?.api_user ||
+    !existente?.api_password ||
+    existente.api_user.includes('PENDIENTE') ||
+    existente.api_password.includes('PENDIENTE');
 
   const payload = {
     nombre: 'Fem Negoci',
@@ -48,6 +60,11 @@ async function main() {
   };
 
   if (existente) {
+    if (wpPendiente && referencia?.api_user && referencia?.api_password) {
+      payload.api_user = referencia.api_user;
+      payload.api_password = referencia.api_password;
+    }
+
     const { data, error } = await supabase
       .from('medios')
       .update(payload)
@@ -66,10 +83,10 @@ async function main() {
     .from('medios')
     .insert({
       ...payload,
-      api_user: 'PENDIENTE_USUARIO_WP',
-      api_password: 'PENDIENTE_PASSWORD_WP',
+      api_user: referencia?.api_user || 'PENDIENTE_USUARIO_WP',
+      api_password: referencia?.api_password || 'PENDIENTE_PASSWORD_WP',
     })
-    .select('id, nombre, slug, email_pop_user, url_wordpress')
+    .select('id, nombre, slug, email_pop_user, url_wordpress, api_user')
     .single();
 
   if (error) throw new Error(error.message);
@@ -77,8 +94,11 @@ async function main() {
   console.log(`Medio creado #${data.id}: ${data.nombre} (${data.slug})`);
   console.log(`  Buzón: ${data.email_pop_user}`);
   console.log(`  WP: ${data.url_wordpress}`);
-  console.log('');
-  console.log('  ⚠️  Falta configurar api_user y api_password en Supabase para publicar en WordPress.');
+
+  if (wpPendiente) {
+    console.log('');
+    console.log('  ⚠️  Falta configurar api_user y api_password en Supabase para publicar en WordPress.');
+  }
 }
 
 main().catch((error) => {

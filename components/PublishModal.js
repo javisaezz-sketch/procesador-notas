@@ -5,6 +5,14 @@ import { MedioBadge } from './MedioLogo';
 
 export default function PublishModal({ articulo, onClose, onConfirm, isPublishing }) {
   const categorias = getCategoriasMedio(articulo.medios);
+  const totalPublicar = Array.isArray(articulo.imagenes_publicar_urls)
+    ? articulo.imagenes_publicar_urls.length
+    : articulo.imagen_destacada_url
+      ? (articulo.imagenes_adicionales ?? 0) + 1
+      : 0;
+  const galeriaCount = articulo.imagen_destacada_url
+    ? Math.max(totalPublicar - 1, articulo.imagenes_adicionales ?? 0)
+    : Math.max(totalPublicar, 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
@@ -29,20 +37,27 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
 
         {articulo.imagen_destacada_url && (
           <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-base text-blue-800 sm:text-sm">
-            La primera foto de la nota se usará como imagen destacada.
-            {(articulo.imagenes_adicionales ?? 0) > 0 ? (
+            Se publicará con imagen destacada
+            {galeriaCount > 0 ? (
               <>
                 {' '}
-                Las otras <strong>{articulo.imagenes_adicionales}</strong> se
-                añadirán al final del artículo al publicar.
+                y <strong>{galeriaCount}</strong> foto
+                {galeriaCount === 1 ? '' : 's'} más al final del artículo.
               </>
             ) : (
-              <> No se duplica en el cuerpo del texto.</>
+              <>.</>
             )}
           </p>
         )}
 
-        {!articulo.imagen_destacada_url && (
+        {!articulo.imagen_destacada_url && totalPublicar > 0 && (
+          <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-base text-blue-800 sm:text-sm">
+            Se publicarán <strong>{totalPublicar}</strong> imagen
+            {totalPublicar === 1 ? '' : 'es'} al final del artículo, sin foto destacada.
+          </p>
+        )}
+
+        {!articulo.imagen_destacada_url && totalPublicar === 0 && (
           <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-base text-amber-800 sm:text-sm">
             Este artículo no tiene imagen destacada. El borrador se publicará sin foto
             a menos que el email traiga imágenes adjuntas o incrustadas en el HTML.

@@ -115,6 +115,10 @@ export default function ArticleDashboard({ articulos = [] }) {
   const [publishArticle, setPublishArticle] = useState(null);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+  const [imagenesNota, setImagenesNota] = useState([]);
+  const [destacadaUrl, setDestacadaUrl] = useState(null);
+  const [publicarUrls, setPublicarUrls] = useState([]);
+  const [imagenesCargando, setImagenesCargando] = useState(false);
   const [guardandoId, setGuardandoId] = useState(null);
   const [saveError, setSaveError] = useState('');
   const [publishingId, setPublishingId] = useState(null);
@@ -153,12 +157,41 @@ export default function ArticleDashboard({ articulos = [] }) {
     setEditedTitle(articulo.titulo_generado ?? '');
     setEditedContent(articulo.contenido_generado ?? '');
     setSaveError('');
+    setImagenesNota([]);
+    setDestacadaUrl(articulo.imagen_destacada_url ?? null);
+    setPublicarUrls(
+      Array.isArray(articulo.imagenes_publicar_urls)
+        ? articulo.imagenes_publicar_urls
+        : [],
+    );
+    setImagenesCargando(true);
+
+    fetch(`/api/articulos/${articulo.id}/imagenes`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.ok) {
+          throw new Error(data.error || 'No se pudieron cargar las imágenes');
+        }
+
+        setImagenesNota(data.imagenes ?? []);
+        setDestacadaUrl(data.imagen_destacada_url ?? null);
+        setPublicarUrls(data.imagenes_publicar_urls ?? []);
+      })
+      .catch((error) => {
+        setSaveError(error.message);
+      })
+      .finally(() => {
+        setImagenesCargando(false);
+      });
   }
 
   function closeContentModal() {
     setSelectedArticle(null);
     setEditedTitle('');
     setEditedContent('');
+    setImagenesNota([]);
+    setDestacadaUrl(null);
+    setPublicarUrls([]);
     setSaveError('');
   }
 
@@ -173,6 +206,8 @@ export default function ArticleDashboard({ articulos = [] }) {
         body: JSON.stringify({
           titulo_generado: editedTitle,
           contenido_generado: editedContent,
+          imagen_destacada_url: destacadaUrl,
+          imagenes_publicar_urls: publicarUrls,
         }),
       });
 
@@ -183,6 +218,10 @@ export default function ArticleDashboard({ articulos = [] }) {
       }
 
       const actualizado = data.articulo;
+      const galeriaCount = Math.max(
+        (actualizado.imagenes_publicar_urls?.length ?? publicarUrls.length) - 1,
+        0,
+      );
 
       setItems((prev) =>
         prev.map((item) =>
@@ -191,6 +230,11 @@ export default function ArticleDashboard({ articulos = [] }) {
                 ...item,
                 titulo_generado: actualizado.titulo_generado,
                 contenido_generado: actualizado.contenido_generado,
+                imagen_destacada_url:
+                  actualizado.imagen_destacada_url ?? destacadaUrl,
+                imagenes_publicar_urls:
+                  actualizado.imagenes_publicar_urls ?? publicarUrls,
+                imagenes_adicionales: galeriaCount,
               }
             : item,
         ),
@@ -202,6 +246,11 @@ export default function ArticleDashboard({ articulos = [] }) {
               ...prev,
               titulo_generado: actualizado.titulo_generado,
               contenido_generado: actualizado.contenido_generado,
+              imagen_destacada_url:
+                actualizado.imagen_destacada_url ?? destacadaUrl,
+              imagenes_publicar_urls:
+                actualizado.imagenes_publicar_urls ?? publicarUrls,
+              imagenes_adicionales: galeriaCount,
             }
           : prev,
       );
@@ -456,8 +505,14 @@ export default function ArticleDashboard({ articulos = [] }) {
           articulo={selectedArticle}
           title={editedTitle}
           content={editedContent}
+          imagenes={imagenesNota}
+          destacadaUrl={destacadaUrl}
+          publicarUrls={publicarUrls}
+          imagenesCargando={imagenesCargando}
           onTitleChange={setEditedTitle}
           onContentChange={setEditedContent}
+          onDestacadaChange={setDestacadaUrl}
+          onPublicarChange={setPublicarUrls}
           onClose={closeContentModal}
           onSave={() => handleGuardar(selectedArticle)}
           isSaving={guardandoId === selectedArticle.id}

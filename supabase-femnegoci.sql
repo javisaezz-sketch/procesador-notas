@@ -33,7 +33,7 @@ Título del post (titulo_generado): UN ÚNICO titular optimizado para SEO. Impac
 Cuerpo HTML (contenido_generado): PROHIBIDO incluir <h1> dentro del HTML. PROHIBIDO repetir el titular en el cuerpo.
 Inicio del article: Comienza directamente con el lead en <p>.
 Subtítulo Estratégico (H2): Tras el primer o segundo párrafo. Resume el ángulo de negocio o la oportunidad para la lectora.
-Arquitectura Interna: Usa H3 o negritas para organizar el flujo.
+Estructura interna del artículo: Usa H3 o negritas para organizar el flujo.
 Hipervínculos: Enlaza marcas, empresas o proyectos mencionados a sus webs oficiales.
 Cierre: Refuerza el valor para la comunidad Fem Negoci.
 

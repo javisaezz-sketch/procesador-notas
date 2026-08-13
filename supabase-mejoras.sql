@@ -6,3 +6,6 @@ ADD COLUMN IF NOT EXISTS wp_post_url TEXT;
 
 ALTER TABLE notas_prensa
 ADD COLUMN IF NOT EXISTS error_mensaje TEXT;
+
+ALTER TABLE articulos
+ADD COLUMN IF NOT EXISTS imagenes_publicar_urls JSONB;

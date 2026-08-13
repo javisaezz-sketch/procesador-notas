@@ -24,6 +24,14 @@ export async function PATCH(request, { params }) {
       cambios.contenido_generado = String(body.contenido_generado);
     }
 
+    if (body.imagen_destacada_url !== undefined) {
+      cambios.imagen_destacada_url = body.imagen_destacada_url;
+    }
+
+    if (body.imagenes_publicar_urls !== undefined) {
+      cambios.imagenes_publicar_urls = body.imagenes_publicar_urls;
+    }
+
     const articulo = await actualizarArticulo(articuloId, cambios);
 
     return NextResponse.json({ ok: true, articulo });

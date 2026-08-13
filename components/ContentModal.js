@@ -1,20 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MedioBadge } from './MedioLogo';
+import ImageGalleryPicker from './ImageGalleryPicker';
 
 export default function ContentModal({
   articulo,
   title,
   content,
+  imagenes = [],
+  destacadaUrl,
+  publicarUrls = [],
+  imagenesCargando = false,
   onTitleChange,
   onContentChange,
+  onDestacadaChange,
+  onPublicarChange,
   onClose,
   onSave,
   isSaving,
   saveError,
 }) {
   const [vista, setVista] = useState('editar');
+
+  useEffect(() => {
+    setVista('editar');
+  }, [articulo.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
@@ -64,6 +75,22 @@ export default function ContentModal({
             onChange={(event) => onTitleChange(event.target.value)}
             className="mb-5 w-full rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-900 outline-none ring-indigo-500 focus:ring-2 sm:py-3 sm:text-sm"
           />
+
+          <div className="mb-6">
+            {imagenesCargando ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                Cargando imágenes...
+              </div>
+            ) : (
+              <ImageGalleryPicker
+                imagenes={imagenes}
+                destacadaUrl={destacadaUrl}
+                publicarUrls={publicarUrls}
+                onDestacadaChange={onDestacadaChange}
+                onPublicarChange={onPublicarChange}
+              />
+            )}
+          </div>
 
           <div className="mb-3 flex gap-2">
             <button

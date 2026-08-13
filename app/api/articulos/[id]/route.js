@@ -32,6 +32,10 @@ export async function PATCH(request, { params }) {
       cambios.imagenes_publicar_urls = body.imagenes_publicar_urls;
     }
 
+    if (body.email_notificacion !== undefined) {
+      cambios.email_notificacion = body.email_notificacion;
+    }
+
     const articulo = await actualizarArticulo(articuloId, cambios);
 
     return NextResponse.json({ ok: true, articulo });

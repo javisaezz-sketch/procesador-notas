@@ -115,6 +115,7 @@ export default function ArticleDashboard({ articulos = [] }) {
   const [publishArticle, setPublishArticle] = useState(null);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+  const [editedEmail, setEditedEmail] = useState('');
   const [imagenesNota, setImagenesNota] = useState([]);
   const [destacadaUrl, setDestacadaUrl] = useState(null);
   const [publicarUrls, setPublicarUrls] = useState([]);
@@ -156,6 +157,7 @@ export default function ArticleDashboard({ articulos = [] }) {
     setSelectedArticle(articulo);
     setEditedTitle(articulo.titulo_generado ?? '');
     setEditedContent(articulo.contenido_generado ?? '');
+    setEditedEmail(articulo.email_notificacion ?? '');
     setSaveError('');
     setImagenesNota([]);
     setDestacadaUrl(articulo.imagen_destacada_url ?? null);
@@ -189,6 +191,7 @@ export default function ArticleDashboard({ articulos = [] }) {
     setSelectedArticle(null);
     setEditedTitle('');
     setEditedContent('');
+    setEditedEmail('');
     setImagenesNota([]);
     setDestacadaUrl(null);
     setPublicarUrls([]);
@@ -206,6 +209,7 @@ export default function ArticleDashboard({ articulos = [] }) {
         body: JSON.stringify({
           titulo_generado: editedTitle,
           contenido_generado: editedContent,
+          email_notificacion: editedEmail,
           imagen_destacada_url: destacadaUrl,
           imagenes_publicar_urls: publicarUrls,
         }),
@@ -230,6 +234,8 @@ export default function ArticleDashboard({ articulos = [] }) {
                 ...item,
                 titulo_generado: actualizado.titulo_generado,
                 contenido_generado: actualizado.contenido_generado,
+                email_notificacion:
+                  actualizado.email_notificacion ?? editedEmail,
                 imagen_destacada_url:
                   actualizado.imagen_destacada_url ?? destacadaUrl,
                 imagenes_publicar_urls:
@@ -246,6 +252,8 @@ export default function ArticleDashboard({ articulos = [] }) {
               ...prev,
               titulo_generado: actualizado.titulo_generado,
               contenido_generado: actualizado.contenido_generado,
+              email_notificacion:
+                actualizado.email_notificacion ?? editedEmail,
               imagen_destacada_url:
                 actualizado.imagen_destacada_url ?? destacadaUrl,
               imagenes_publicar_urls:
@@ -505,12 +513,14 @@ export default function ArticleDashboard({ articulos = [] }) {
           articulo={selectedArticle}
           title={editedTitle}
           content={editedContent}
+          emailNotificacion={editedEmail}
           imagenes={imagenesNota}
           destacadaUrl={destacadaUrl}
           publicarUrls={publicarUrls}
           imagenesCargando={imagenesCargando}
           onTitleChange={setEditedTitle}
           onContentChange={setEditedContent}
+          onEmailNotificacionChange={setEditedEmail}
           onDestacadaChange={setDestacadaUrl}
           onPublicarChange={setPublicarUrls}
           onClose={closeContentModal}

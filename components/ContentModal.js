@@ -8,12 +8,14 @@ export default function ContentModal({
   articulo,
   title,
   content,
+  emailNotificacion,
   imagenes = [],
   destacadaUrl,
   publicarUrls = [],
   imagenesCargando = false,
   onTitleChange,
   onContentChange,
+  onEmailNotificacionChange,
   onDestacadaChange,
   onPublicarChange,
   onClose,
@@ -41,7 +43,7 @@ export default function ContentModal({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <p className="text-base font-medium text-indigo-600 sm:text-sm">
-                Edición de contenido
+                Revisión del artículo
               </p>
               <div className="mt-2">
                 <MedioBadge medio={articulo.medios} />
@@ -62,20 +64,6 @@ export default function ContentModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-5">
-          <label
-            htmlFor="titulo-generado"
-            className="mb-2 block text-base font-medium text-slate-700 sm:text-sm"
-          >
-            Título
-          </label>
-          <input
-            id="titulo-generado"
-            type="text"
-            value={title}
-            onChange={(event) => onTitleChange(event.target.value)}
-            className="mb-5 w-full rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-900 outline-none ring-indigo-500 focus:ring-2 sm:py-3 sm:text-sm"
-          />
-
           <div className="mb-6">
             {imagenesCargando ? (
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
@@ -90,6 +78,27 @@ export default function ContentModal({
                 onPublicarChange={onPublicarChange}
               />
             )}
+          </div>
+
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+            <label
+              htmlFor="email-notificacion"
+              className="mb-1 block text-base font-semibold text-emerald-900 sm:text-sm"
+            >
+              Email de notificación a la agencia
+            </label>
+            <p className="mb-3 text-sm text-emerald-800">
+              Se enviará cuando publiques el borrador en WordPress. Revísalo y
+              corrígelo si hace falta.
+            </p>
+            <input
+              id="email-notificacion"
+              type="email"
+              value={emailNotificacion}
+              onChange={(event) => onEmailNotificacionChange(event.target.value)}
+              placeholder="Sin email detectado en la nota"
+              className="w-full rounded-xl border border-emerald-300 bg-white px-4 py-3.5 text-base text-slate-900 outline-none ring-emerald-500 focus:ring-2 sm:py-3 sm:text-sm"
+            />
           </div>
 
           <div className="mb-3 flex gap-2">
@@ -118,21 +127,52 @@ export default function ContentModal({
           </div>
 
           {vista === 'editar' ? (
-            <textarea
-              id="contenido-generado"
-              value={content}
-              onChange={(event) => onContentChange(event.target.value)}
-              className="min-h-[280px] w-full rounded-xl border border-slate-300 px-4 py-4 font-mono text-base leading-7 text-slate-800 outline-none ring-indigo-500 focus:ring-2 sm:min-h-[320px] sm:px-4 sm:py-3 sm:text-sm sm:leading-6"
-            />
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="titulo-generado"
+                  className="mb-2 block text-base font-medium text-slate-700 sm:text-sm"
+                >
+                  Título del artículo
+                </label>
+                <input
+                  id="titulo-generado"
+                  type="text"
+                  value={title}
+                  onChange={(event) => onTitleChange(event.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-900 outline-none ring-indigo-500 focus:ring-2 sm:py-3 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="contenido-generado"
+                  className="mb-2 block text-base font-medium text-slate-700 sm:text-sm"
+                >
+                  Contenido HTML
+                </label>
+                <textarea
+                  id="contenido-generado"
+                  value={content}
+                  onChange={(event) => onContentChange(event.target.value)}
+                  className="min-h-[280px] w-full rounded-xl border border-slate-300 px-4 py-4 font-mono text-base leading-7 text-slate-800 outline-none ring-indigo-500 focus:ring-2 sm:min-h-[320px] sm:px-4 sm:py-3 sm:text-sm sm:leading-6"
+                />
+              </div>
+            </div>
           ) : (
-            <div
-              className="max-w-none min-h-[280px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-base leading-relaxed text-slate-800 sm:min-h-[320px] sm:text-sm [&_a]:text-indigo-600 [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-bold [&_img]:my-4 [&_img]:max-w-full [&_img]:rounded-lg [&_p]:mb-4"
-              dangerouslySetInnerHTML={{ __html: content }}
-            />
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <h2 className="mb-4 text-2xl font-bold leading-snug text-slate-900 sm:text-xl">
+                {title || 'Sin título'}
+              </h2>
+              <div
+                className="max-w-none text-base leading-relaxed text-slate-800 sm:text-sm [&_a]:text-indigo-600 [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-bold [&_img]:my-4 [&_img]:max-w-full [&_img]:rounded-lg [&_p]:mb-4"
+                dangerouslySetInnerHTML={{ __html: content }}
+              />
+            </div>
           )}
 
           <p className="mt-3 text-base text-slate-500 sm:text-sm">
-            Guarda los cambios antes de publicar. Se usarán al crear el borrador en WordPress.
+            Guarda los cambios antes de publicar. Título, contenido, imágenes y
+            email se usarán al crear el borrador en WordPress.
           </p>
 
           {saveError && (

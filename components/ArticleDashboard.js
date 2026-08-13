@@ -353,7 +353,7 @@ export default function ArticleDashboard({
       setPublishArticle(null);
       setVistaPanel('aprobados');
 
-      if (publicadoEnWeb) {
+      if (publicarEnWeb) {
         setFeedback({
           type: 'success',
           message: `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,

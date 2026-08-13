@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: pipeline-emails
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   pipeline:
@@ -41,6 +41,7 @@ jobs:
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
 
       - name: Ejecutar pipeline POP3 + Gemini
+        id: pipeline
         run: node pipeline.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -48,3 +49,11 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+          DASHBOARD_URL: https://procesador-notas.vercel.app
+
+      - name: Resumen si falla
+        if: failure()
+        run: |
+          echo "## Pipeline fallido" >> "$GITHUB_STEP_SUMMARY"
+          echo "Revisa los logs del job. Puede haber fallado un buzón POP3 o Gemini en una nota concreta." >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=Pipeline fallido::Revisa los logs en Actions. Algunos medios pueden haber fallado sin bloquear el resto."

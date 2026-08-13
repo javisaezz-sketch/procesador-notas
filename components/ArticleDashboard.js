@@ -113,7 +113,10 @@ export default function ArticleDashboard({ articulos = [] }) {
   const [filtroMedio, setFiltroMedio] = useState('todos');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [publishArticle, setPublishArticle] = useState(null);
+  const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+  const [guardandoId, setGuardandoId] = useState(null);
+  const [saveError, setSaveError] = useState('');
   const [publishingId, setPublishingId] = useState(null);
   const [anulandoId, setAnulandoId] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -147,12 +150,71 @@ export default function ArticleDashboard({ articulos = [] }) {
 
   function openContentModal(articulo) {
     setSelectedArticle(articulo);
+    setEditedTitle(articulo.titulo_generado ?? '');
     setEditedContent(articulo.contenido_generado ?? '');
+    setSaveError('');
   }
 
   function closeContentModal() {
     setSelectedArticle(null);
+    setEditedTitle('');
     setEditedContent('');
+    setSaveError('');
+  }
+
+  async function handleGuardar(articulo) {
+    setGuardandoId(articulo.id);
+    setSaveError('');
+
+    try {
+      const response = await fetch(`/api/articulos/${articulo.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo_generado: editedTitle,
+          contenido_generado: editedContent,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo guardar el artículo');
+      }
+
+      const actualizado = data.articulo;
+
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === articulo.id
+            ? {
+                ...item,
+                titulo_generado: actualizado.titulo_generado,
+                contenido_generado: actualizado.contenido_generado,
+              }
+            : item,
+        ),
+      );
+
+      setSelectedArticle((prev) =>
+        prev?.id === articulo.id
+          ? {
+              ...prev,
+              titulo_generado: actualizado.titulo_generado,
+              contenido_generado: actualizado.contenido_generado,
+            }
+          : prev,
+      );
+
+      setFeedback({
+        type: 'success',
+        message: `Cambios guardados en "${actualizado.titulo_generado}".`,
+      });
+    } catch (error) {
+      setSaveError(error.message);
+    } finally {
+      setGuardandoId(null);
+    }
   }
 
   async function handlePublicar(articulo, categoriaSlug) {
@@ -188,6 +250,8 @@ export default function ArticleDashboard({ articulos = [] }) {
         type: 'success',
         message:
           `Publicado en ${data.medio} → categoría "${data.categoria}"${data.imagenDestacada ? ' con imagen destacada' : ''}${data.emailNotificacion ? ` · Notificar a ${data.emailNotificacion}` : ''}.${mensajeEmailBuzon(data.emailBuzon)}`,
+        link: data.wordpressPostUrl,
+        linkLabel: 'Abrir borrador en WordPress',
       });
       router.refresh();
     } catch (error) {
@@ -337,6 +401,16 @@ export default function ArticleDashboard({ articulos = [] }) {
           }`}
         >
           {feedback.message}
+          {feedback.link && (
+            <a
+              href={feedback.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex rounded-xl bg-green-700 px-4 py-2.5 text-base font-semibold text-white hover:bg-green-800 sm:text-sm sm:py-2"
+            >
+              {feedback.linkLabel || 'Abrir enlace'}
+            </a>
+          )}
         </div>
       )}
 
@@ -380,9 +454,14 @@ export default function ArticleDashboard({ articulos = [] }) {
       {selectedArticle && (
         <ContentModal
           articulo={selectedArticle}
+          title={editedTitle}
           content={editedContent}
+          onTitleChange={setEditedTitle}
           onContentChange={setEditedContent}
           onClose={closeContentModal}
+          onSave={() => handleGuardar(selectedArticle)}
+          isSaving={guardandoId === selectedArticle.id}
+          saveError={saveError}
         />
       )}
 

@@ -25,6 +25,9 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Comprobar versión Node
+        run: node -v
+
       - name: Instalar dependencias
         run: npm ci
 

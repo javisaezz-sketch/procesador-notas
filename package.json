@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Procesa notas de prensa con Gemini y las guarda como artículos en Supabase",
   "main": "procesador.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3001",
     "dev:3000": "next dev --hostname 127.0.0.1 --port 3000",

@@ -113,37 +113,6 @@ function extraerRetryDelayMs(error) {
   return 35000;
 }
 
-// NUEVA FUNCIÓN: Inserta las imágenes contextualmente usando marcadores o repartiendo entre párrafos
-function inyectarImagenesContextuales(html, imagenesUrls, titulo) {
-  let contenido = html;
-
-  imagenesUrls.forEach((url, index) => {
-    const marcador = `[IMAGEN_${index + 1}]`;
-    const tagImagen = `<figure class="wp-block-image size-large"><img src="${url}" alt="${titulo}" class="wp-image-auto"/></figure>`;
-
-    if (contenido.includes(marcador)) {
-      contenido = contenido.replace(marcador, tagImagen);
-    } else {
-      // Si no encuentra el marcador explícito, la inserta tras un párrafo </p>
-      const partes = contenido.split('</p>');
-      const numPartes = partes.length;
-      if (numPartes > 2) {
-        // Calcular posición estratégica
-        const pos = Math.min(index * 2 + 2, numPartes - 1);
-        partes[pos] = partes[pos] + `\n${tagImagen}`;
-        contenido = partes.join('</p>');
-      } else {
-        contenido += `\n${tagImagen}`;
-      }
-    }
-  });
-
-  // Limpiar cualquier marcador sobrante que la IA haya puesto de más
-  contenido = contenido.replace(/\[IMAGEN_\d+\]/gi, '');
-
-  return contenido;
-}
-
 async function procesarUnaNotaConReintentos(supabase, genAI, nota) {
   const maxIntentos = 3;
 
@@ -223,7 +192,6 @@ ${REGLAS_TITULO_INLINE}
 - PROHIBIDO repetir el titular dentro del contenido.
 - El cuerpo comienza directamente con el lead en <p>.
 - El subtítulo estratégico va en <h2> (solo uno, tras el primer o segundo párrafo).
-- MARCADORES DE IMAGEN: Si el artículo es largo o tiene pausas narrativas de interés, inserta en una nueva línea entre párrafos los marcadores [IMAGEN_1], [IMAGEN_2] según consideres oportuno para colocar fotos de apoyo.
 
 Nota de prensa:
 Remitente: ${nota.remitente ?? 'No indicado'}
@@ -232,7 +200,7 @@ Contenido:
 ${notaTexto}
 
 Responde ÚNICAMENTE con JSON válido:
-{"titulo_generado":"...","contenido_generado":"<article><p>Lead...</p><h2>Subtítulo</h2><p>Párrafo...</p>[IMAGEN_1]<p>Párrafo...</p></article>"}
+{"titulo_generado":"...","contenido_generado":"<article><p>Lead...</p><h2>Subtítulo</h2>...</article>"}
 `.trim();
 
   const result = await model.generateContent(prompt);
@@ -244,6 +212,7 @@ Responde ÚNICAMENTE con JSON válido:
   const {
     quitarImagenIncrustada,
     quitarImagenesGaleria,
+    inyectarImagenesAlFinal,
   } = await import('./contenidoHtml.js');
 
   const imagenes = await resolverImagenesParaArticulo(supabase, {
@@ -256,9 +225,8 @@ Responde ÚNICAMENTE con JSON válido:
     quitarImagenIncrustada(contenido_generado),
   );
 
-  // Inyección contextual en lugar de ir todas al final
   if (imagenes.adicionalesUrls.length) {
-    contenidoFinal = inyectarImagenesContextuales(
+    contenidoFinal = inyectarImagenesAlFinal(
       contenidoFinal,
       imagenes.adicionalesUrls,
       titulo_generado,

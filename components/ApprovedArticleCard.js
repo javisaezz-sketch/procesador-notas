@@ -19,9 +19,11 @@ export default function ApprovedArticleCard({
   articulo,
   isPublishing,
   isAnulando,
+  isReenviando = false,
   selected = false,
   onToggleSelect,
   onPublishWeb,
+  onReenviarMedio,
   onDelete,
 }) {
   const theme = getMedioTheme(articulo.medios);
@@ -124,10 +126,21 @@ export default function ApprovedArticleCard({
           </p>
         )}
 
+        {onReenviarMedio && (
+          <button
+            type="button"
+            onClick={onReenviarMedio}
+            disabled={isPublishing || isAnulando || isReenviando}
+            className="rounded-xl border border-violet-200 px-4 py-3.5 text-base font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
+          >
+            {isReenviando ? 'Encolando...' : 'Procesar en otro medio'}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onDelete}
-          disabled={isPublishing || isAnulando}
+          disabled={isPublishing || isAnulando || isReenviando}
           className="rounded-xl border border-red-200 px-4 py-3.5 text-base font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
         >
           {isAnulando ? 'Eliminando...' : 'Eliminar del panel'}

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import ContentModal from './ContentModal';
 import PublishModal from './PublishModal';
+import ReenviarMedioModal from './ReenviarMedioModal';
 import ApprovedArticleCard from './ApprovedArticleCard';
 import ErrorNotaCard from './ErrorNotaCard';
 import MedioLogo, { MedioBadge } from './MedioLogo';
@@ -43,7 +44,16 @@ function getMedioNombre(articulo) {
   return articulo.medios?.nombre ?? 'Medio sin nombre';
 }
 
-function ArticleCard({ articulo, isPublishing, isAnulando, onView, onPublish, onCancel }) {
+function ArticleCard({
+  articulo,
+  isPublishing,
+  isAnulando,
+  isReenviando,
+  onView,
+  onPublish,
+  onReenviarMedio,
+  onCancel,
+}) {
   const theme = getMedioTheme(articulo.medios);
 
   return (
@@ -84,7 +94,7 @@ function ArticleCard({ articulo, isPublishing, isAnulando, onView, onPublish, on
           <button
             type="button"
             onClick={onView}
-            disabled={isPublishing || isAnulando}
+            disabled={isPublishing || isAnulando || isReenviando}
             className="flex-1 rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
           >
             Ver contenido
@@ -92,7 +102,7 @@ function ArticleCard({ articulo, isPublishing, isAnulando, onView, onPublish, on
           <button
             type="button"
             onClick={onPublish}
-            disabled={isPublishing || isAnulando}
+            disabled={isPublishing || isAnulando || isReenviando}
             className="flex-1 rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
           >
             {isPublishing ? 'Publicando...' : 'Aprobar'}
@@ -100,8 +110,16 @@ function ArticleCard({ articulo, isPublishing, isAnulando, onView, onPublish, on
         </div>
         <button
           type="button"
+          onClick={onReenviarMedio}
+          disabled={isPublishing || isAnulando || isReenviando}
+          className="rounded-xl border border-violet-200 px-4 py-3.5 text-base font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
+        >
+          {isReenviando ? 'Encolando...' : 'Procesar en otro medio'}
+        </button>
+        <button
+          type="button"
           onClick={onCancel}
-          disabled={isPublishing || isAnulando}
+          disabled={isPublishing || isAnulando || isReenviando}
           className="rounded-xl border border-red-200 px-4 py-3.5 text-base font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
         >
           {isAnulando ? 'Anulando...' : 'Anular'}
@@ -115,6 +133,7 @@ export default function ArticleDashboard({
   articulos = [],
   articulosAprobados = [],
   notasConError = [],
+  medios = [],
 }) {
   const router = useRouter();
   const [vistaPanel, setVistaPanel] = useState('pendientes');
@@ -124,6 +143,8 @@ export default function ArticleDashboard({
   const [filtroMedio, setFiltroMedio] = useState('todos');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [publishArticle, setPublishArticle] = useState(null);
+  const [reenviarArticulo, setReenviarArticulo] = useState(null);
+  const [reenviandoId, setReenviandoId] = useState(null);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
   const [editedEmail, setEditedEmail] = useState('');
@@ -612,6 +633,41 @@ export default function ArticleDashboard({
     }
   }
 
+  async function handleReenviarMedio(articulo, medioId) {
+    setReenviandoId(articulo.id);
+    setFeedback({
+      type: 'info',
+      message: `Encolando nota para otro medio...`,
+    });
+
+    try {
+      const response = await fetch(`/api/articulos/${articulo.id}/reenviar-medio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ medioId }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo encolar la nota');
+      }
+
+      setReenviarArticulo(null);
+      setFeedback({
+        type: 'success',
+        message:
+          data.message ||
+          'Nota encolada. El pipeline generará el artículo en los próximos minutos.',
+      });
+      router.refresh();
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message });
+    } finally {
+      setReenviandoId(null);
+    }
+  }
+
   async function handleAnular(articulo) {
     const esAprobado = articulo.estado === 'publicado';
     const confirmar = window.confirm(
@@ -690,12 +746,16 @@ export default function ArticleDashboard({
             key={articulo.id}
             articulo={articulo}
             isPublishing={
-              publishingWebId === articulo.id || publicandoLote
+              publishingWebId === articulo.id ||
+              publicandoLote ||
+              reenviandoId === articulo.id
             }
             isAnulando={anulandoId === articulo.id}
             selected={selectedApprovedIds.includes(articulo.id)}
             onToggleSelect={() => toggleApprovedSelection(articulo.id)}
             onPublishWeb={() => handlePublicarEnWeb(articulo)}
+            onReenviarMedio={() => setReenviarArticulo(articulo)}
+            isReenviando={reenviandoId === articulo.id}
             onDelete={() => handleAnular(articulo)}
           />
         ))}
@@ -709,6 +769,7 @@ export default function ArticleDashboard({
         {lista.map((articulo) => {
           const isPublishing = publishingId === articulo.id;
           const isAnulando = anulandoId === articulo.id;
+          const isReenviando = reenviandoId === articulo.id;
 
           return (
             <ArticleCard
@@ -716,8 +777,10 @@ export default function ArticleDashboard({
               articulo={articulo}
               isPublishing={isPublishing}
               isAnulando={isAnulando}
+              isReenviando={isReenviando}
               onView={() => openContentModal(articulo)}
               onPublish={() => setPublishArticle(articulo)}
+              onReenviarMedio={() => setReenviarArticulo(articulo)}
               onCancel={() => handleAnular(articulo)}
             />
           );
@@ -1001,6 +1064,16 @@ export default function ArticleDashboard({
           onConfirm={(categoriaSlug, opciones) =>
             handlePublicar(publishArticle, categoriaSlug, opciones)
           }
+        />
+      )}
+
+      {reenviarArticulo && (
+        <ReenviarMedioModal
+          articulo={reenviarArticulo}
+          medios={medios}
+          isSubmitting={reenviandoId === reenviarArticulo.id}
+          onClose={() => setReenviarArticulo(null)}
+          onConfirm={(medioId) => handleReenviarMedio(reenviarArticulo, medioId)}
         />
       )}
     </>

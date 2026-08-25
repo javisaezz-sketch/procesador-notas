@@ -25,6 +25,8 @@ export default function ContentModal({
 }) {
   const [vista, setVista] = useState('editar');
   const [mostrarNotaOriginal, setMostrarNotaOriginal] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewCargando, setPreviewCargando] = useState(false);
 
   const nota = articulo.notas_prensa ?? null;
   const textoOriginal =
@@ -35,7 +37,43 @@ export default function ContentModal({
   useEffect(() => {
     setVista('editar');
     setMostrarNotaOriginal(false);
+    setPreviewHtml('');
   }, [articulo.id]);
+
+  useEffect(() => {
+    if (vista !== 'vista') {
+      return;
+    }
+
+    let cancelado = false;
+    setPreviewCargando(true);
+
+    fetch('/api/contenido/vista-previa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html: content }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!cancelado) {
+          setPreviewHtml(data.ok ? data.html : content);
+        }
+      })
+      .catch(() => {
+        if (!cancelado) {
+          setPreviewHtml(content);
+        }
+      })
+      .finally(() => {
+        if (!cancelado) {
+          setPreviewCargando(false);
+        }
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [vista, content, articulo.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
@@ -231,10 +269,14 @@ export default function ContentModal({
               <h2 className="mb-4 text-2xl font-bold leading-snug text-slate-900 sm:text-xl">
                 {title || 'Sin título'}
               </h2>
-              <div
-                className="max-w-none text-base leading-relaxed text-slate-800 sm:text-sm [&_a]:text-indigo-600 [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-bold [&_img]:my-4 [&_img]:max-w-full [&_img]:rounded-lg [&_p]:mb-4"
-                dangerouslySetInnerHTML={{ __html: content }}
-              />
+              {previewCargando ? (
+                <p className="text-sm text-slate-500">Cargando vista previa...</p>
+              ) : (
+                <div
+                  className="max-w-none text-base leading-relaxed text-slate-800 sm:text-sm [&_a]:text-indigo-600 [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-bold [&_img]:my-4 [&_img]:max-w-full [&_img]:rounded-lg [&_p]:mb-4"
+                  dangerouslySetInnerHTML={{ __html: previewHtml || content }}
+                />
+              )}
             </div>
           )}
 

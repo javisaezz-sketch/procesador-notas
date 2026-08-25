@@ -8,7 +8,7 @@ ensureWebSocketPolyfill();
 const { procesarBandejaPop3 } = require('./lib/receptorPop3.cjs');
 const { procesarPendientes } = require('./lib/procesadorCore.cjs');
 
-const DASHBOARD_URL = process.env.DASHBOARD_URL || 'https://procesador-notas.vercel.app';
+const DASHBOARD_URL = process.env.DASHBOARD_URL || 'https://panel-editorial.vercel.app';
 const SUMMARY_FILE = 'pipeline-summary.json';
 
 function guardarResumen(resumen) {

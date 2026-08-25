@@ -40,6 +40,7 @@ Añade:
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key |
 | `GEMINI_API_KEY` | API key Gemini |
 | `GEMINI_MODEL` | `gemini-3.6-flash` |
+| `DASHBOARD_URL` | *(opcional)* `https://panel-editorial.vercel.app` si cambias el dominio de Vercel |
 
 El workflow `.github/workflows/pipeline.yml` ya está configurado para ejecutarse **cada 10 minutos**.
 
@@ -64,7 +65,9 @@ Prueba manual: **Actions → Pipeline emails → Run workflow**.
 
 5. **Deploy**.
 
-Te dará una URL tipo: `https://procesador-notas.vercel.app`
+En **Settings → General** puedes renombrar el proyecto (p. ej. `panel-editorial`).
+
+Te dará una URL tipo: `https://panel-editorial.vercel.app`
 
 ---
 

@@ -49,7 +49,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
-          DASHBOARD_URL: https://procesador-notas.vercel.app
+          DASHBOARD_URL: https://panel-editorial.vercel.app
 
       - name: Resumen del pipeline
         if: always()

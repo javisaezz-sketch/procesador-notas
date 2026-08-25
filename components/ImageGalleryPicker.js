@@ -1,5 +1,11 @@
 'use client';
 
+import { mismaImagenStorage } from '../lib/limpiarAlmacenNota.js';
+
+function urlEnSeleccion(url, urls) {
+  return urls.some((item) => mismaImagenStorage(item, url));
+}
+
 export default function ImageGalleryPicker({
   imagenes = [],
   destacadaUrl,
@@ -15,37 +21,44 @@ export default function ImageGalleryPicker({
     );
   }
 
-  const publicarSet = new Set(publicarUrls);
+  const publicarSet = new Set(
+    imagenes
+      .filter((imagen) => urlEnSeleccion(imagen.url, publicarUrls))
+      .map((imagen) => imagen.url),
+  );
 
   function togglePublicar(url) {
-    const next = new Set(publicarSet);
-
-    if (next.has(url)) {
-      next.delete(url);
-    } else {
-      next.add(url);
-    }
-
-    const nextUrls = imagenes
-      .map((imagen) => imagen.url)
-      .filter((item) => next.has(item));
+    const incluida = urlEnSeleccion(url, publicarUrls);
+    const nextUrls = incluida
+      ? publicarUrls.filter((item) => !mismaImagenStorage(item, url))
+      : [
+          ...publicarUrls,
+          imagenes.find((imagen) => mismaImagenStorage(imagen.url, url))?.url ??
+            url,
+        ];
 
     onPublicarChange(nextUrls);
 
-    if (!next.has(destacadaUrl)) {
+    if (!urlEnSeleccion(destacadaUrl, nextUrls)) {
       onDestacadaChange(nextUrls[0] ?? null);
     }
   }
 
   function marcarDestacada(url) {
-    if (!publicarSet.has(url)) {
-      const nextUrls = imagenes
-        .map((imagen) => imagen.url)
-        .filter((item) => publicarSet.has(item) || item === url);
+    if (!urlEnSeleccion(url, publicarUrls)) {
+      const urlCanon =
+        imagenes.find((imagen) => mismaImagenStorage(imagen.url, url))?.url ??
+        url;
+      const nextUrls = [
+        ...publicarUrls.filter((item) => !mismaImagenStorage(item, url)),
+        urlCanon,
+      ];
       onPublicarChange(nextUrls);
     }
 
-    onDestacadaChange(url);
+    onDestacadaChange(
+      imagenes.find((imagen) => mismaImagenStorage(imagen.url, url))?.url ?? url,
+    );
   }
 
   return (
@@ -63,7 +76,7 @@ export default function ImageGalleryPicker({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {imagenes.map((imagen) => {
           const incluida = publicarSet.has(imagen.url);
-          const esDestacada = destacadaUrl === imagen.url;
+          const esDestacada = mismaImagenStorage(destacadaUrl, imagen.url);
 
           return (
             <div
@@ -118,8 +131,9 @@ export default function ImageGalleryPicker({
       </div>
 
       <p className="text-sm text-slate-500">
-        Marca qué fotos quieres publicar y elige la destacada con la estrella. La
-        destacada va en WordPress; el resto se añade al final del artículo.
+        Marca qué fotos quieres publicar y elige la destacada con la estrella.
+        Solo las imágenes seleccionadas aparecerán en el artículo; la destacada
+        se envía además como imagen principal de WordPress.
       </p>
     </div>
   );

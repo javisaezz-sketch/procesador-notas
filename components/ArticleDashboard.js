@@ -264,6 +264,10 @@ export default function ArticleDashboard({
     setGuardandoId(articulo.id);
     setSaveError('');
 
+    const destacadaAGuardar =
+      destacadaUrl ??
+      (publicarUrls.length ? publicarUrls[0] : null);
+
     try {
       const response = await fetch(`/api/articulos/${articulo.id}`, {
         method: 'PATCH',
@@ -274,7 +278,7 @@ export default function ArticleDashboard({
           ...(articulo.sin_notificacion
             ? {}
             : { email_notificacion: editedEmail }),
-          imagen_destacada_url: destacadaUrl,
+          imagen_destacada_url: destacadaAGuardar,
           imagenes_publicar_urls: publicarUrls,
         }),
       });
@@ -327,12 +331,21 @@ export default function ArticleDashboard({
           : prev,
       );
 
+      if (typeof actualizado.contenido_generado === 'string') {
+        setEditedContent(actualizado.contenido_generado);
+      }
+
+      setPublicarUrls(actualizado.imagenes_publicar_urls ?? publicarUrls);
+      setDestacadaUrl(actualizado.imagen_destacada_url ?? destacadaUrl);
+
       setFeedback({
         type: 'success',
         message: `Cambios guardados en "${actualizado.titulo_generado}".`,
       });
+      return null;
     } catch (error) {
       setSaveError(error.message);
+      return error.message;
     } finally {
       setGuardandoId(null);
     }
@@ -363,6 +376,13 @@ export default function ArticleDashboard({
     });
 
     try {
+      if (selectedArticle?.id === articulo.id) {
+        const errorGuardado = await handleGuardar(articulo);
+        if (errorGuardado) {
+          throw new Error(errorGuardado);
+        }
+      }
+
       const response = await fetch(`/api/articulos/${articulo.id}/publicar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

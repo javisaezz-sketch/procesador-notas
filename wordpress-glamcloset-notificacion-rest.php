@@ -1,5 +1,6 @@
 /**
  * GLAM CLOSET — Añade a functions.php (igual que Travelicius / Vida&Style)
+ * Imagen destacada REST: ver wordpress-imagen-destacada-rest.php (todos los medios).
  */
 
 add_action('init', function () {

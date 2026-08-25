@@ -1,5 +1,6 @@
 /**
  * TRAVELICIUS — Añade esto a tu functions.php (ANTES del hook transition_post_status)
+ * Imagen destacada REST: ver wordpress-imagen-destacada-rest.php (todos los medios).
  */
 
 add_action('init', function () {

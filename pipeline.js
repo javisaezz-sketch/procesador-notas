@@ -112,6 +112,13 @@ async function main() {
 
   guardarResumen(resumen);
 
+  try {
+    const { savePipelineEstado } = await import('./lib/pipelineEstado.js');
+    await savePipelineEstado(resumen);
+  } catch (error) {
+    console.error(`No se pudo guardar estado en Supabase: ${error.message}`);
+  }
+
   console.log('');
   console.log('═══════════════════════════════════════════');
   if (errorFatal) {
@@ -144,15 +151,25 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  guardarResumen({
+main().catch(async (error) => {
+  const resumenFatal = {
     ok: false,
     fatal: { fase: 'pipeline', error: error.message },
     advertencias: [],
     emails: null,
     articulosGenerados: 0,
     dashboardUrl: DASHBOARD_URL,
-  });
+  };
+
+  guardarResumen(resumenFatal);
+
+  try {
+    const { savePipelineEstado } = await import('./lib/pipelineEstado.js');
+    await savePipelineEstado(resumenFatal);
+  } catch (saveError) {
+    console.error(`No se pudo guardar estado en Supabase: ${saveError.message}`);
+  }
+
   console.error('❌ Error fatal en pipeline:', error.message);
   process.exit(1);
 });

@@ -1,12 +1,21 @@
 'use client';
 
-import { useRef } from 'react';
-import { getCategoriasMedio } from '@/lib/medios';
+import { useEffect, useRef, useState } from 'react';
+import {
+  getCategoriaDefaultMedio,
+  getCategoriasMedio,
+  guardarCategoriaDefaultMedio,
+} from '@/lib/medios';
 import { MedioBadge } from './MedioLogo';
 
 export default function PublishModal({ articulo, onClose, onConfirm, isPublishing }) {
   const formRef = useRef(null);
   const categorias = getCategoriasMedio(articulo.medios);
+  const [categoriaSlug, setCategoriaSlug] = useState(null);
+
+  useEffect(() => {
+    setCategoriaSlug(getCategoriaDefaultMedio(articulo.medios));
+  }, [articulo.id, articulo.medios]);
   const totalPublicar = Array.isArray(articulo.imagenes_publicar_urls)
     ? articulo.imagenes_publicar_urls.length
     : articulo.imagen_destacada_url
@@ -19,15 +28,13 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
   function enviar(publicarEnWeb) {
     if (!formRef.current) return;
 
-    const formData = new FormData(formRef.current);
-    const categoriaSlug = formData.get('categoria');
-
     if (!categoriaSlug) {
       formRef.current.reportValidity();
       return;
     }
 
-    onConfirm(String(categoriaSlug), { publicarEnWeb });
+    guardarCategoriaDefaultMedio(articulo.medios, categoriaSlug);
+    onConfirm(categoriaSlug, { publicarEnWeb });
   }
 
   return (
@@ -107,6 +114,8 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
                   name="categoria"
                   value={cat.slug}
                   required
+                  checked={categoriaSlug === cat.slug}
+                  onChange={() => setCategoriaSlug(cat.slug)}
                   className="h-5 w-5 shrink-0 text-indigo-600 sm:h-4 sm:w-4"
                 />
                 <span className="text-base font-medium text-slate-800 sm:text-sm">{cat.nombre}</span>

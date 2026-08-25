@@ -1,5 +1,6 @@
 import ArticleDashboard from '../components/ArticleDashboard';
 import LogoutButton from '../components/LogoutButton';
+import PipelineStatusBanner from '../components/PipelineStatusBanner';
 import {
   getArticulosAprobados,
   getArticulosPendientes,
@@ -42,6 +43,8 @@ export default async function DashboardPage() {
             className="mt-3 h-auto w-[min(100%,260px)] sm:mt-4 sm:w-[300px]"
           />
         </header>
+
+        <PipelineStatusBanner />
 
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-5 text-red-700">

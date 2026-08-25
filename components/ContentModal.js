@@ -24,9 +24,17 @@ export default function ContentModal({
   saveError,
 }) {
   const [vista, setVista] = useState('editar');
+  const [mostrarNotaOriginal, setMostrarNotaOriginal] = useState(false);
+
+  const nota = articulo.notas_prensa ?? null;
+  const textoOriginal =
+    nota?.contenido_original?.trim() ||
+    nota?.contenido_html?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() ||
+    '';
 
   useEffect(() => {
     setVista('editar');
+    setMostrarNotaOriginal(false);
   }, [articulo.id]);
 
   return (
@@ -114,6 +122,52 @@ export default function ContentModal({
               </>
             )}
           </div>
+
+          {nota && (
+            <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setMostrarNotaOriginal((prev) => !prev)}
+                className="flex w-full items-center justify-between px-4 py-3.5 text-left text-sm font-semibold text-slate-800 hover:bg-slate-100 sm:py-3"
+              >
+                <span>Nota de prensa original</span>
+                <span className="text-slate-500">{mostrarNotaOriginal ? '▲' : '▼'}</span>
+              </button>
+
+              {mostrarNotaOriginal && (
+                <div className="space-y-3 border-t border-slate-200 px-4 py-4 text-sm text-slate-700">
+                  {nota.asunto && (
+                    <p>
+                      <span className="font-medium text-slate-900">Asunto:</span>{' '}
+                      {nota.asunto}
+                    </p>
+                  )}
+                  {nota.remitente && (
+                    <p className="break-all">
+                      <span className="font-medium text-slate-900">Remitente:</span>{' '}
+                      {nota.remitente}
+                    </p>
+                  )}
+                  {nota.fecha_recepcion && (
+                    <p>
+                      <span className="font-medium text-slate-900">Recibida:</span>{' '}
+                      {new Intl.DateTimeFormat('es-ES', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      }).format(new Date(nota.fecha_recepcion))}
+                    </p>
+                  )}
+                  {textoOriginal ? (
+                    <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-3 font-sans text-sm leading-relaxed text-slate-800">
+                      {textoOriginal}
+                    </pre>
+                  ) : (
+                    <p className="text-slate-500">Sin contenido original disponible.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="mb-3 flex gap-2">
             <button

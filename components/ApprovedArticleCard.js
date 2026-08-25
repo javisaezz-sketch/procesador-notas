@@ -19,16 +19,32 @@ export default function ApprovedArticleCard({
   articulo,
   isPublishing,
   isAnulando,
+  selected = false,
+  onToggleSelect,
   onPublishWeb,
   onDelete,
 }) {
   const theme = getMedioTheme(articulo.medios);
   const borrador = esBorradorWordPress(articulo);
+  const puedePublicar = borrador && articulo.wp_post_id;
 
   return (
     <div
       className={`flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm border-l-4 sm:p-6 ${theme.accent}`}
     >
+      {puedePublicar && onToggleSelect && (
+        <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            disabled={isPublishing || isAnulando}
+            className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+          />
+          Seleccionar para publicar en lote
+        </label>
+      )}
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <MedioBadge medio={articulo.medios} />
         <span

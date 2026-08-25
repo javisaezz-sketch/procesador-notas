@@ -62,6 +62,8 @@ function ArticleCard({ articulo, isPublishing, isAnulando, onView, onPublish, on
         <img
           src={articulo.imagen_destacada_url}
           alt="Imagen destacada"
+          loading="lazy"
+          decoding="async"
           className="mt-4 h-48 w-full rounded-xl object-cover sm:h-40"
         />
       )}
@@ -138,6 +140,8 @@ export default function ArticleDashboard({
   const [descartandoId, setDescartandoId] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
+  const [selectedApprovedIds, setSelectedApprovedIds] = useState([]);
+  const [publicandoLote, setPublicandoLote] = useState(false);
 
   useEffect(() => {
     setItems(articulos);
@@ -145,6 +149,16 @@ export default function ArticleDashboard({
 
   useEffect(() => {
     setApprovedItems(articulosAprobados);
+    setSelectedApprovedIds((prev) =>
+      prev.filter((id) =>
+        articulosAprobados.some(
+          (articulo) =>
+            articulo.id === id &&
+            articulo.wp_post_status !== 'publish' &&
+            articulo.wp_post_id,
+        ),
+      ),
+    );
   }, [articulosAprobados]);
 
   useEffect(() => {
@@ -449,6 +463,70 @@ export default function ArticleDashboard({
     }
   }
 
+  function toggleApprovedSelection(articuloId) {
+    setSelectedApprovedIds((prev) =>
+      prev.includes(articuloId)
+        ? prev.filter((id) => id !== articuloId)
+        : [...prev, articuloId],
+    );
+  }
+
+  async function handlePublicarEnWebLote() {
+    if (!selectedApprovedIds.length) return;
+
+    const confirmar = window.confirm(
+      `¿Publicar ${selectedApprovedIds.length} borrador${selectedApprovedIds.length === 1 ? '' : 'es'} en la web?`,
+    );
+
+    if (!confirmar) return;
+
+    setPublicandoLote(true);
+    setFeedback({
+      type: 'info',
+      message: `Publicando ${selectedApprovedIds.length} artículo(s) en la web...`,
+    });
+
+    try {
+      const response = await fetch('/api/articulos/publicar-en-web-lote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedApprovedIds }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo publicar en lote');
+      }
+
+      const publicadosIds = (data.resultados ?? []).map((item) => item.id);
+      setApprovedItems((prev) =>
+        prev.filter((item) => !publicadosIds.includes(item.id)),
+      );
+      setSelectedApprovedIds((prev) =>
+        prev.filter((id) => !publicadosIds.includes(id)),
+      );
+
+      if (data.fallidos > 0) {
+        setFeedback({
+          type: 'error',
+          message: `Publicados ${data.publicados}, fallidos ${data.fallidos}. ${data.errores?.[0]?.error ?? ''}`,
+        });
+      } else {
+        setFeedback({
+          type: 'success',
+          message: `${data.publicados} artículo(s) publicados en la web.`,
+        });
+      }
+
+      router.refresh();
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message });
+    } finally {
+      setPublicandoLote(false);
+    }
+  }
+
   async function handleReintentarNota(nota) {
     setReintentandoId(nota.id);
     setFeedback({
@@ -591,8 +669,12 @@ export default function ArticleDashboard({
           <ApprovedArticleCard
             key={articulo.id}
             articulo={articulo}
-            isPublishing={publishingWebId === articulo.id}
+            isPublishing={
+              publishingWebId === articulo.id || publicandoLote
+            }
             isAnulando={anulandoId === articulo.id}
+            selected={selectedApprovedIds.includes(articulo.id)}
+            onToggleSelect={() => toggleApprovedSelection(articulo.id)}
             onPublishWeb={() => handlePublicarEnWeb(articulo)}
             onDelete={() => handleAnular(articulo)}
           />
@@ -727,6 +809,36 @@ export default function ArticleDashboard({
           </p>
         </div>
       </section>
+
+      {vistaPanel === 'aprobados' && selectedApprovedIds.length > 0 && (
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-green-900">
+            {selectedApprovedIds.length} borrador
+            {selectedApprovedIds.length === 1 ? '' : 'es'} seleccionado
+            {selectedApprovedIds.length === 1 ? '' : 's'}
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setSelectedApprovedIds([])}
+              disabled={publicandoLote}
+              className="rounded-xl border border-green-300 px-4 py-2.5 text-sm font-semibold text-green-800 hover:bg-green-100 disabled:opacity-50"
+            >
+              Limpiar selección
+            </button>
+            <button
+              type="button"
+              onClick={handlePublicarEnWebLote}
+              disabled={publicandoLote}
+              className="rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:bg-green-400"
+            >
+              {publicandoLote
+                ? 'Publicando...'
+                : `Publicar ${selectedApprovedIds.length} en la web`}
+            </button>
+          </div>
+        </div>
+      )}
 
       {mediosDisponibles.length > 1 && (
         <div className="-mx-3 mb-6 flex gap-2.5 overflow-x-auto px-3 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">

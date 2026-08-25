@@ -21,7 +21,7 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
     : articulo.imagen_destacada_url
       ? (articulo.imagenes_adicionales ?? 0) + 1
       : 0;
-  const galeriaCount = articulo.imagen_destacada_url
+  const fotosEnCuerpo = articulo.imagen_destacada_url
     ? Math.max(totalPublicar - 1, articulo.imagenes_adicionales ?? 0)
     : Math.max(totalPublicar, 0);
 
@@ -63,11 +63,12 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
         {articulo.imagen_destacada_url && (
           <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-base text-blue-800 sm:text-sm">
             Se publicará con imagen destacada
-            {galeriaCount > 0 ? (
+            {fotosEnCuerpo > 0 ? (
               <>
                 {' '}
-                y <strong>{galeriaCount}</strong> foto
-                {galeriaCount === 1 ? '' : 's'} más al final del artículo.
+                y <strong>{fotosEnCuerpo}</strong> foto
+                {fotosEnCuerpo === 1 ? '' : 's'} intercalada
+                {fotosEnCuerpo === 1 ? '' : 's'} en el texto.
               </>
             ) : (
               <>.</>
@@ -78,7 +79,8 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
         {!articulo.imagen_destacada_url && totalPublicar > 0 && (
           <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-base text-blue-800 sm:text-sm">
             Se publicarán <strong>{totalPublicar}</strong> imagen
-            {totalPublicar === 1 ? '' : 'es'} al final del artículo, sin foto destacada.
+            {totalPublicar === 1 ? '' : 'es'} intercalada
+            {totalPublicar === 1 ? '' : 's'} en el texto, sin foto destacada.
           </p>
         )}
 

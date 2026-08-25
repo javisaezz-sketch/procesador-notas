@@ -15,7 +15,8 @@
     "email": "node receptor-email.js",
     "imagenes": "node reextraer-imagenes.js",
     "pipeline": "node pipeline.js",
-    "todo": "node pipeline.js"
+    "todo": "node pipeline.js",
+    "limpiar-supabase": "node scripts/limpiar-supabase.cjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",

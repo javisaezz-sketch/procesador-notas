@@ -29,8 +29,8 @@ async function main() {
   }
 
   if (!wpUser || !wpPass) {
-    throw new Error(
-      'Añade WP_API_USER y WP_API_PASSWORD al .env (usuario/contraseña de aplicación WordPress, igual para los 4 medios).',
+    console.log(
+      'ℹ️  Sin WP_API_USER / WP_API_PASSWORD: medios creados sin publicar en WordPress (emails + Gemini sí funcionan).',
     );
   }
 
@@ -125,8 +125,9 @@ async function main() {
     const payload = {
       ...medio,
       ...pop,
-      api_user: wpUser,
-      api_password: wpPass,
+      ...(wpUser && wpPass
+        ? { api_user: wpUser, api_password: wpPass }
+        : { api_user: null, api_password: null }),
     };
 
     const { data: existente } = await supabase

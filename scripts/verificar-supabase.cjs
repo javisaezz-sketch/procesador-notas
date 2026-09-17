@@ -13,10 +13,12 @@ async function main() {
     process.exit(1);
   }
 
+  const urlNormalizada = urlRaw.replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+
   let hostname;
 
   try {
-    hostname = new URL(urlRaw).hostname;
+    hostname = new URL(urlNormalizada).hostname;
   } catch {
     console.error(`❌ SUPABASE_URL no es válida: ${urlRaw}`);
     process.exit(1);
@@ -35,7 +37,7 @@ async function main() {
   }
 
   try {
-    const response = await fetch(`${urlRaw.replace(/\/+$/, '')}/rest/v1/medios?select=id&limit=1`, {
+    const response = await fetch(`${urlNormalizada}/rest/v1/medios?select=id&limit=1`, {
       headers: {
         apikey: key,
         Authorization: `Bearer ${key}`,

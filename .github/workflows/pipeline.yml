@@ -1,9 +1,10 @@
 name: Pipeline emails (cada 30 min)
 
 on:
-  schedule:
-    # Cada 30 minutos (UTC). Menos minutos de Actions y menos llamadas a APIs.
-    - cron: '5,35 * * * *'
+  # Programación pausada: el proyecto Supabase estaba inaccesible (egress / host).
+  # Cuando npm run verificar-supabase funcione, descomenta el bloque schedule.
+  # schedule:
+  #   - cron: '5,35 * * * *'
   workflow_dispatch:
 
 concurrency:

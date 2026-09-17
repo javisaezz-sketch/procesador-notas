@@ -20,7 +20,8 @@
     "seguridad-rls": "node scripts/aplicar-seguridad-rls.cjs",
     "verificar-seguridad-rls": "node scripts/verificar-seguridad-rls.cjs",
     "verificar-supabase": "node scripts/verificar-supabase.cjs",
-    "recuperar-cuota": "node scripts/recuperar-cuota.cjs"
+    "recuperar-cuota": "node scripts/recuperar-cuota.cjs",
+    "bootstrap-proyecto-nuevo": "node scripts/bootstrap-proyecto-nuevo.cjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",

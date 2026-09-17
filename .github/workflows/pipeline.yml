@@ -1,10 +1,8 @@
 name: Pipeline emails (cada 30 min)
 
 on:
-  # Programación pausada: el proyecto Supabase estaba inaccesible (egress / host).
-  # Cuando npm run verificar-supabase funcione, descomenta el bloque schedule.
-  # schedule:
-  #   - cron: '5,35 * * * *'
+  schedule:
+    - cron: '5,35 * * * *'
   workflow_dispatch:
 
 concurrency:

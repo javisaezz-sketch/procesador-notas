@@ -193,7 +193,7 @@ export default function ArticleDashboard({
     const interval = setInterval(() => {
       router.refresh();
       setUltimaActualizacion(new Date());
-    }, 30000);
+    }, 90000);
 
     return () => clearInterval(interval);
   }, [router, selectedArticle, publishArticle]);
@@ -882,7 +882,7 @@ export default function ArticleDashboard({
             )}
           </div>
           <p className="text-xs text-slate-500 sm:text-right">
-            Auto-refresh cada 30 s
+            Auto-refresh cada 90 s
             {ultimaActualizacion
               ? ` · ${ultimaActualizacion.toLocaleTimeString('es-ES', {
                   hour: '2-digit',

@@ -1,9 +1,9 @@
-name: Pipeline emails (cada 10 min)
+name: Pipeline emails (cada 30 min)
 
 on:
   schedule:
-    # Cada 10 minutos (UTC). GitHub puede retrasarlo 1-5 min.
-    - cron: '*/10 * * * *'
+    # Cada 30 minutos (UTC). Menos minutos de Actions y menos llamadas a APIs.
+    - cron: '5,35 * * * *'
   workflow_dispatch:
 
 concurrency:
@@ -40,6 +40,13 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
 
+      - name: Comprobar conexión Supabase
+        run: node scripts/verificar-supabase.cjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Ejecutar pipeline POP3 + Gemini
         id: pipeline
         run: node pipeline.js
@@ -50,6 +57,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
           DASHBOARD_URL: https://panel-editorial.vercel.app
+          MAX_NOTAS_POR_RUN: '2'
 
       - name: Resumen del pipeline
         if: always()

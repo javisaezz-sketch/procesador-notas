@@ -20,6 +20,9 @@ export default function ContentModal({
   onPublicarChange,
   onClose,
   onSave,
+  onPublish,
+  canPublish = false,
+  isPublishing = false,
   isSaving,
   saveError,
 }) {
@@ -27,18 +30,49 @@ export default function ContentModal({
   const [mostrarNotaOriginal, setMostrarNotaOriginal] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewCargando, setPreviewCargando] = useState(false);
+  const [textoOriginal, setTextoOriginal] = useState('');
+  const [notaOriginalCargando, setNotaOriginalCargando] = useState(false);
 
   const nota = articulo.notas_prensa ?? null;
-  const textoOriginal =
-    nota?.contenido_original?.trim() ||
-    nota?.contenido_html?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() ||
-    '';
 
   useEffect(() => {
     setVista('editar');
     setMostrarNotaOriginal(false);
     setPreviewHtml('');
+    setTextoOriginal('');
+    setNotaOriginalCargando(false);
   }, [articulo.id]);
+
+  useEffect(() => {
+    if (!mostrarNotaOriginal || !nota?.id || textoOriginal) {
+      return undefined;
+    }
+
+    let cancelado = false;
+    setNotaOriginalCargando(true);
+
+    fetch(`/api/notas/${nota.id}/contenido-original`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!cancelado) {
+          setTextoOriginal(data.ok ? data.texto ?? '' : '');
+        }
+      })
+      .catch(() => {
+        if (!cancelado) {
+          setTextoOriginal('');
+        }
+      })
+      .finally(() => {
+        if (!cancelado) {
+          setNotaOriginalCargando(false);
+        }
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [mostrarNotaOriginal, nota?.id, textoOriginal]);
 
   useEffect(() => {
     if (vista !== 'vista') {
@@ -195,7 +229,9 @@ export default function ContentModal({
                       }).format(new Date(nota.fecha_recepcion))}
                     </p>
                   )}
-                  {textoOriginal ? (
+                  {notaOriginalCargando ? (
+                    <p className="text-slate-500">Cargando nota original…</p>
+                  ) : textoOriginal ? (
                     <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-3 font-sans text-sm leading-relaxed text-slate-800">
                       {textoOriginal}
                     </pre>
@@ -281,8 +317,8 @@ export default function ContentModal({
           )}
 
           <p className="mt-3 text-base text-slate-500 sm:text-sm">
-            Guarda los cambios antes de publicar. Título, contenido, imágenes y
-            email se usarán al crear el borrador en WordPress.
+            Guarda los cambios para activar <strong>Publicar</strong>. Título,
+            contenido, imágenes y email se enviarán a WordPress.
           </p>
 
           {saveError && (
@@ -292,23 +328,38 @@ export default function ContentModal({
           )}
         </div>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-5 py-5 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
           <button
             type="button"
             onClick={onClose}
-            disabled={isSaving}
+            disabled={isSaving || isPublishing}
             className="rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
           >
             Cancelar
           </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={isSaving}
-            className="rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white transition hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
-          >
-            {isSaving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isSaving || isPublishing}
+              className="rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white transition hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
+            >
+              {isSaving ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+            <button
+              type="button"
+              onClick={onPublish}
+              disabled={!canPublish || isSaving || isPublishing || !onPublish}
+              title={
+                canPublish
+                  ? 'Elegir categoría y enviar a WordPress'
+                  : 'Guarda los cambios primero'
+              }
+              className="rounded-xl bg-emerald-600 px-4 py-3.5 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 sm:py-2.5 sm:text-sm"
+            >
+              {isPublishing ? 'Publicando...' : 'Publicar'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

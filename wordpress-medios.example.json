@@ -1,0 +1,18 @@
+{
+  "travelicius": {
+    "api_user": "TU_LOGIN_WP_AQUI",
+    "api_password": "xxxx xxxx xxxx xxxx xxxx xxxx"
+  },
+  "vidaystyle": {
+    "api_user": "TU_LOGIN_WP_AQUI",
+    "api_password": "yyyy yyyy yyyy yyyy yyyy yyyy"
+  },
+  "glamcloset": {
+    "api_user": "TU_LOGIN_WP_AQUI",
+    "api_password": "zzzz zzzz zzzz zzzz zzzz zzzz"
+  },
+  "femnegoci": {
+    "api_user": "TU_LOGIN_WP_AQUI",
+    "api_password": "wwww wwww wwww wwww wwww wwww"
+  }
+}

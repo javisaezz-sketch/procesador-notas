@@ -1,6 +1,12 @@
 node_modules/
 .env
 .env.local
+ultimo-chequeo-supabase.txt
+wordpress-medios.json
+.env.jira
 .next/
 out/
 .vercel
+
+# credenciales de Google Drive
+.secretos-google/

@@ -1,5 +1,31 @@
 import { NextResponse } from 'next/server';
-import { actualizarArticulo } from '@/lib/articulos';
+import { actualizarArticulo, getArticuloPanelDetalle } from '@/lib/articulos';
+
+export async function GET(_request, { params }) {
+  try {
+    const { id } = await params;
+    const articuloId = Number(id);
+
+    if (!articuloId || Number.isNaN(articuloId)) {
+      return NextResponse.json(
+        { ok: false, error: 'ID de artículo inválido' },
+        { status: 400 },
+      );
+    }
+
+    const articulo = await getArticuloPanelDetalle(articuloId);
+
+    return NextResponse.json({ ok: true, articulo });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: error.message || 'Error al cargar el artículo',
+      },
+      { status: 500 },
+    );
+  }
+}
 
 export async function PATCH(request, { params }) {
   try {

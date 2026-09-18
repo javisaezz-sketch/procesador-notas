@@ -21,7 +21,9 @@
     "verificar-seguridad-rls": "node scripts/verificar-seguridad-rls.cjs",
     "verificar-supabase": "node scripts/verificar-supabase.cjs",
     "recuperar-cuota": "node scripts/recuperar-cuota.cjs",
-    "bootstrap-proyecto-nuevo": "node scripts/bootstrap-proyecto-nuevo.cjs"
+    "bootstrap-proyecto-nuevo": "node scripts/bootstrap-proyecto-nuevo.cjs",
+    "comprobar-uso-supabase": "node scripts/comprobar-uso-supabase.cjs",
+    "configurar-wordpress-medios": "node scripts/configurar-wordpress-medios.cjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",

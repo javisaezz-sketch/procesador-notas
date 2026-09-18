@@ -1,8 +1,8 @@
-name: Pipeline emails (cada 30 min)
+name: Pipeline emails (cada 2 h)
 
 on:
   schedule:
-    - cron: '5,35 * * * *'
+    - cron: '15 */2 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -56,7 +56,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
           DASHBOARD_URL: https://panel-editorial.vercel.app
-          MAX_NOTAS_POR_RUN: '2'
+          MAX_NOTAS_POR_RUN: '1'
 
       - name: Resumen del pipeline
         if: always()

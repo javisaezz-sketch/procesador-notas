@@ -38,7 +38,7 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">
       <button
         type="button"
         aria-label="Cerrar"

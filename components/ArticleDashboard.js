@@ -68,14 +68,13 @@ function ArticleCard({
         {articulo.titulo_generado}
       </h2>
 
-      {articulo.imagen_destacada_url && (
-        <img
-          src={articulo.imagen_destacada_url}
-          alt="Imagen destacada"
-          loading="lazy"
-          decoding="async"
-          className="mt-4 h-48 w-full rounded-xl object-cover sm:h-40"
-        />
+      {(articulo.imagen_destacada_url || articulo.imagenes_adicionales > 0) && (
+        <p className="mt-3 text-sm text-slate-500">
+          {articulo.imagen_destacada_url ? 'Con imagen destacada' : 'Sin destacada'}
+          {articulo.imagenes_adicionales > 0
+            ? ` · ${articulo.imagenes_adicionales + (articulo.imagen_destacada_url ? 1 : 0)} foto(s) en la nota`
+            : ''}
+        </p>
       )}
 
       <div className="mt-4 space-y-2 text-base text-slate-600 sm:text-sm">
@@ -163,6 +162,7 @@ export default function ArticleDashboard({
   const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
   const [selectedApprovedIds, setSelectedApprovedIds] = useState([]);
   const [publicandoLote, setPublicandoLote] = useState(false);
+  const [revisionListaPublicar, setRevisionListaPublicar] = useState(false);
 
   useEffect(() => {
     setItems(articulos);
@@ -191,9 +191,12 @@ export default function ArticleDashboard({
     if (modalAbierto) return undefined;
 
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        return;
+      }
       router.refresh();
       setUltimaActualizacion(new Date());
-    }, 90000);
+    }, 300000);
 
     return () => clearInterval(interval);
   }, [router, selectedArticle, publishArticle]);
@@ -236,10 +239,15 @@ export default function ArticleDashboard({
 
   const borradoresPendientesWeb = approvedItems.length;
 
+  function marcarRevisionModificada() {
+    setRevisionListaPublicar(false);
+  }
+
   function openContentModal(articulo) {
     setSelectedArticle(articulo);
+    setRevisionListaPublicar(false);
     setEditedTitle(articulo.titulo_generado ?? '');
-    setEditedContent(articulo.contenido_generado ?? '');
+    setEditedContent('');
     setEditedEmail(articulo.email_notificacion ?? '');
     setSaveError('');
     setImagenesNota([]);
@@ -251,16 +259,31 @@ export default function ArticleDashboard({
     );
     setImagenesCargando(true);
 
-    fetch(`/api/articulos/${articulo.id}/imagenes`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (!data.ok) {
-          throw new Error(data.error || 'No se pudieron cargar las imágenes');
+    Promise.all([
+      fetch(`/api/articulos/${articulo.id}`).then((response) => response.json()),
+      fetch(`/api/articulos/${articulo.id}/imagenes`).then((response) =>
+        response.json(),
+      ),
+    ])
+      .then(([detalle, imagenesData]) => {
+        if (!detalle.ok) {
+          throw new Error(detalle.error || 'No se pudo cargar el artículo');
+        }
+        if (!imagenesData.ok) {
+          throw new Error(imagenesData.error || 'No se pudieron cargar las imágenes');
         }
 
-        setImagenesNota(data.imagenes ?? []);
-        setDestacadaUrl(data.imagen_destacada_url ?? null);
-        setPublicarUrls(data.imagenes_publicar_urls ?? []);
+        const actualizado = {
+          ...articulo,
+          ...detalle.articulo,
+        };
+        setSelectedArticle(actualizado);
+        setEditedTitle(actualizado.titulo_generado ?? '');
+        setEditedContent(actualizado.contenido_generado ?? '');
+        setEditedEmail(actualizado.email_notificacion ?? articulo.email_notificacion ?? '');
+        setImagenesNota(imagenesData.imagenes ?? []);
+        setDestacadaUrl(imagenesData.imagen_destacada_url ?? null);
+        setPublicarUrls(imagenesData.imagenes_publicar_urls ?? []);
       })
       .catch((error) => {
         setSaveError(error.message);
@@ -272,6 +295,7 @@ export default function ArticleDashboard({
 
   function closeContentModal() {
     setSelectedArticle(null);
+    setRevisionListaPublicar(false);
     setEditedTitle('');
     setEditedContent('');
     setEditedEmail('');
@@ -359,9 +383,11 @@ export default function ArticleDashboard({
       setPublicarUrls(actualizado.imagenes_publicar_urls ?? publicarUrls);
       setDestacadaUrl(actualizado.imagen_destacada_url ?? destacadaUrl);
 
+      setRevisionListaPublicar(true);
+
       setFeedback({
         type: 'success',
-        message: `Cambios guardados en "${actualizado.titulo_generado}".`,
+        message: `Cambios guardados. Ya puedes pulsar Publicar.`,
       });
       return null;
     } catch (error) {
@@ -425,6 +451,9 @@ export default function ArticleDashboard({
 
       setItems((prev) => prev.filter((item) => item.id !== articulo.id));
       setPublishArticle(null);
+      if (selectedArticle?.id === articulo.id) {
+        closeContentModal();
+      }
 
       if (publicarEnWeb) {
         setApprovedItems((prev) => prev.filter((item) => item.id !== articulo.id));
@@ -882,7 +911,7 @@ export default function ArticleDashboard({
             )}
           </div>
           <p className="text-xs text-slate-500 sm:text-right">
-            Auto-refresh cada 90 s
+            Auto-refresh cada 5 min (solo con pestaña visible)
             {ultimaActualizacion
               ? ` · ${ultimaActualizacion.toLocaleTimeString('es-ES', {
                   hour: '2-digit',
@@ -1044,13 +1073,31 @@ export default function ArticleDashboard({
           destacadaUrl={destacadaUrl}
           publicarUrls={publicarUrls}
           imagenesCargando={imagenesCargando}
-          onTitleChange={setEditedTitle}
-          onContentChange={setEditedContent}
-          onEmailNotificacionChange={setEditedEmail}
-          onDestacadaChange={setDestacadaUrl}
-          onPublicarChange={setPublicarUrls}
+          onTitleChange={(value) => {
+            marcarRevisionModificada();
+            setEditedTitle(value);
+          }}
+          onContentChange={(value) => {
+            marcarRevisionModificada();
+            setEditedContent(value);
+          }}
+          onEmailNotificacionChange={(value) => {
+            marcarRevisionModificada();
+            setEditedEmail(value);
+          }}
+          onDestacadaChange={(value) => {
+            marcarRevisionModificada();
+            setDestacadaUrl(value);
+          }}
+          onPublicarChange={(value) => {
+            marcarRevisionModificada();
+            setPublicarUrls(value);
+          }}
           onClose={closeContentModal}
           onSave={() => handleGuardar(selectedArticle)}
+          onPublish={() => setPublishArticle(selectedArticle)}
+          canPublish={revisionListaPublicar}
+          isPublishing={publishingId === selectedArticle.id}
           isSaving={guardandoId === selectedArticle.id}
           saveError={saveError}
         />

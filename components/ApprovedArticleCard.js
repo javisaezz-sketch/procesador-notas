@@ -64,12 +64,13 @@ export default function ApprovedArticleCard({
         {articulo.titulo_generado}
       </h2>
 
-      {articulo.imagen_destacada_url && (
-        <img
-          src={articulo.imagen_destacada_url}
-          alt="Imagen destacada"
-          className="mt-4 h-48 w-full rounded-xl object-cover sm:h-40"
-        />
+      {(articulo.imagen_destacada_url || articulo.imagenes_adicionales > 0) && (
+        <p className="mt-3 text-sm text-slate-500">
+          {articulo.imagen_destacada_url ? 'Con imagen destacada' : 'Sin destacada'}
+          {articulo.imagenes_adicionales > 0
+            ? ` · ${articulo.imagenes_adicionales + (articulo.imagen_destacada_url ? 1 : 0)} foto(s)`
+            : ''}
+        </p>
       )}
 
       <div className="mt-4 space-y-2 text-base text-slate-600 sm:text-sm">

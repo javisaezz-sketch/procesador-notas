@@ -26,11 +26,6 @@ function resumirError(mensaje) {
 function getTituloNota(nota) {
   if (nota.asunto?.trim()) return nota.asunto.trim();
 
-  const linea = nota.contenido_original?.trim().split('\n')[0]?.trim();
-  if (linea) {
-    return linea.length <= 120 ? linea : `${linea.slice(0, 117)}...`;
-  }
-
   return `Nota #${nota.id}`;
 }
 

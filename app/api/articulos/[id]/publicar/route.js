@@ -25,6 +25,15 @@ export async function POST(request, { params }) {
 
     const resultado = await publicarArticulo(articuloId, categoriaSlug);
 
+    if (resultado.esInstagram) {
+      return NextResponse.json({
+        ok: true,
+        message: 'Publicado con éxito en Instagram (@laglamdelbuenvivir)',
+        publicadoEnWeb: true,
+        ...resultado,
+      });
+    }
+
     if (publicarEnWeb) {
       const enWeb = await publicarPostEnWordPress(articuloId);
 

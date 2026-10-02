@@ -160,40 +160,47 @@ export default function ContentModal({
             )}
           </div>
 
-          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-            {articulo.sin_notificacion ? (
-              <>
-                <p className="text-base font-semibold text-emerald-900 sm:text-sm">
-                  Sin notificación a agencia
-                </p>
-                <p className="mt-2 text-sm text-emerald-800">
-                  Este artículo se generó desde un enlace. No se enviará email
-                  a ninguna agencia al publicarlo.
-                </p>
-              </>
-            ) : (
-              <>
-                <label
-                  htmlFor="email-notificacion"
-                  className="mb-1 block text-base font-semibold text-emerald-900 sm:text-sm"
-                >
-                  Email de notificación a la agencia
-                </label>
-                <p className="mb-3 text-sm text-emerald-800">
-                  Se enviará cuando publiques el borrador en WordPress. Revísalo y
-                  corrígelo si hace falta.
-                </p>
-                <input
-                  id="email-notificacion"
-                  type="email"
-                  value={emailNotificacion}
-                  onChange={(event) => onEmailNotificacionChange(event.target.value)}
-                  placeholder="Sin email detectado en la nota"
-                  className="w-full rounded-xl border border-emerald-300 bg-white px-4 py-3.5 text-base text-slate-900 outline-none ring-emerald-500 focus:ring-2 sm:py-3 sm:text-sm"
-                />
-              </>
-            )}
-          </div>
+          {articulo.medios?.slug === 'laglam' ? (
+            <div className="mb-6 rounded-xl border border-pink-200 bg-pink-50 px-4 py-4">
+              <p className="text-base font-semibold text-pink-900 sm:text-sm">
+                Publicación directa en Instagram (@laglamdelbuenvivir)
+              </p>
+              <p className="mt-1 text-sm text-pink-800">
+                El texto se publicará como pie de foto (caption) en el feed de Instagram junto con la foto seleccionada y los 10 hashtags oficiales de LaGlam.
+              </p>
+            </div>
+          ) : articulo.sin_notificacion ? (
+            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+              <p className="text-base font-semibold text-emerald-900 sm:text-sm">
+                Sin notificación a agencia
+              </p>
+              <p className="mt-2 text-sm text-emerald-800">
+                Este artículo se generó desde un enlace. No se enviará email
+                a ninguna agencia al publicarlo.
+              </p>
+            </div>
+          ) : (
+            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+              <label
+                htmlFor="email-notificacion"
+                className="mb-1 block text-base font-semibold text-emerald-900 sm:text-sm"
+              >
+                Email de notificación a la agencia
+              </label>
+              <p className="mb-3 text-sm text-emerald-800">
+                Se enviará cuando publiques el borrador en WordPress. Revísalo y
+                corrígelo si hace falta.
+              </p>
+              <input
+                id="email-notificacion"
+                type="email"
+                value={emailNotificacion}
+                onChange={(event) => onEmailNotificacionChange(event.target.value)}
+                placeholder="Sin email detectado en la nota"
+                className="w-full rounded-xl border border-emerald-300 bg-white px-4 py-3.5 text-base text-slate-900 outline-none ring-emerald-500 focus:ring-2 sm:py-3 sm:text-sm"
+              />
+            </div>
+          )}
 
           {nota && (
             <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50">
@@ -275,7 +282,7 @@ export default function ContentModal({
                   htmlFor="titulo-generado"
                   className="mb-2 block text-base font-medium text-slate-700 sm:text-sm"
                 >
-                  Título del artículo
+                  {articulo.medios?.slug === 'laglam' ? 'Título / Reclamo del post' : 'Título del artículo'}
                 </label>
                 <input
                   id="titulo-generado"
@@ -290,7 +297,7 @@ export default function ContentModal({
                   htmlFor="contenido-generado"
                   className="mb-2 block text-base font-medium text-slate-700 sm:text-sm"
                 >
-                  Contenido HTML
+                  {articulo.medios?.slug === 'laglam' ? 'Pie de foto (Caption de Instagram)' : 'Contenido HTML'}
                 </label>
                 <textarea
                   id="contenido-generado"
@@ -317,8 +324,9 @@ export default function ContentModal({
           )}
 
           <p className="mt-3 text-base text-slate-500 sm:text-sm">
-            Guarda los cambios para activar <strong>Publicar</strong>. Título,
-            contenido, imágenes y email se enviarán a WordPress.
+            {articulo.medios?.slug === 'laglam'
+              ? 'Guarda los cambios para activar Publicar. La foto y el texto se enviarán directamente al feed de Instagram.'
+              : 'Guarda los cambios para activar Publicar. Título, contenido, imágenes y email se enviarán a WordPress.'}
           </p>
 
           {saveError && (

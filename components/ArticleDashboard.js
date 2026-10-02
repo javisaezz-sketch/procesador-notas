@@ -8,7 +8,7 @@ import ReenviarMedioModal from './ReenviarMedioModal';
 import ApprovedArticleCard from './ApprovedArticleCard';
 import ErrorNotaCard from './ErrorNotaCard';
 import MedioLogo, { MedioBadge } from './MedioLogo';
-import { agruparPorMedio, getMedioTheme, ordenarMedios } from '@/lib/medios';
+import { agruparPorMedio, esMedioInstagram, getMedioTheme, ordenarMedios } from '@/lib/medios';
 
 function mensajeEmailBuzon(emailBuzon) {
   if (!emailBuzon) return '';
@@ -102,9 +102,17 @@ function ArticleCard({
             type="button"
             onClick={onPublish}
             disabled={isPublishing || isAnulando || isReenviando}
-            className="flex-1 rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
+            className={`flex-1 rounded-xl px-4 py-3.5 text-base font-semibold text-white disabled:opacity-50 sm:py-2.5 sm:text-sm ${
+              esMedioInstagram(articulo.medios)
+                ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 hover:opacity-90'
+                : 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400'
+            }`}
           >
-            {isPublishing ? 'Publicando...' : 'Aprobar'}
+            {isPublishing
+              ? 'Publicando...'
+              : esMedioInstagram(articulo.medios)
+                ? 'Publicar en Instagram'
+                : 'Aprobar'}
           </button>
         </div>
         <button
@@ -457,11 +465,19 @@ export default function ArticleDashboard({
 
       if (publicarEnWeb) {
         setApprovedItems((prev) => prev.filter((item) => item.id !== articulo.id));
+        const esIg =
+          data.esInstagram ||
+          data.medioSlug === 'laglam' ||
+          data.medio === 'LaGlam' ||
+          data.wordpressPostUrl?.includes('instagram.com');
+
         setFeedback({
           type: 'success',
-          message: `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,
+          message: esIg
+            ? `Publicado con éxito en Instagram (@laglamdelbuenvivir). Ya está visible en el feed.`
+            : `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,
           link: data.wordpressPostUrl,
-          linkLabel: 'Ver artículo publicado',
+          linkLabel: esIg ? 'Ver post en Instagram' : 'Ver artículo publicado',
         });
       } else {
         const aprobado = buildApprovedItem(articulo, data, false);

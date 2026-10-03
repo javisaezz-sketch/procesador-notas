@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseClient } from '@/lib/supabase';
 import { generarPostInstagramDesdeReview } from '@/lib/googleMaps';
+import { publicarArticulo } from '@/lib/publicarArticulo';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export async function POST(request, { params }) {
   try {
@@ -30,12 +32,31 @@ export async function POST(request, { params }) {
       instruccionesEditor,
     });
 
-    return NextResponse.json({
-      ok: true,
-      message: 'Post de Instagram generado con éxito para @laglamdelbuenvivir',
-      articulo: resultado.articulo,
-      notaId: resultado.notaId,
-    });
+    try {
+      const publicado = await publicarArticulo(resultado.articulo.id);
+      return NextResponse.json({
+        ok: true,
+        publicado: true,
+        message: 'Post publicado en Instagram (@laglamdelbuenvivir)',
+        articulo: publicado.articulo || resultado.articulo,
+        notaId: resultado.notaId,
+        instagramUrl: publicado.wordpressPostUrl || null,
+      });
+    } catch (publishError) {
+      console.error(
+        '[API /api/google-maps/[id]/generar] Post generado pero no publicado:',
+        publishError,
+      );
+      return NextResponse.json({
+        ok: true,
+        publicado: false,
+        message:
+          'El post se generó, pero Instagram no lo publicó. Está en Pendientes para reintentar.',
+        articulo: resultado.articulo,
+        notaId: resultado.notaId,
+        errorPublicacion: publishError.message,
+      });
+    }
   } catch (error) {
     console.error('[API /api/google-maps/[id]/generar] Error:', error);
     return NextResponse.json(

@@ -741,34 +741,42 @@ export default function ArticleDashboard({
         throw new Error(data.error || 'No se pudo generar el post para Instagram');
       }
 
-      // Quitar reseña de la lista de Google Maps
       setGmapsItems((prev) =>
         prev.filter((r) => r.review_id !== review.review_id),
       );
-
-      // Limpiar el estado de carga antes del refresco
       setGenerandoReviewId(null);
 
-      // Añadir el nuevo artículo a la lista de pendientes para que esté disponible de inmediato
-      if (data.articulo) {
-        const medioLaGlam = medios.find((m) => m.slug === 'laglam') || {
-          id: 5,
-          nombre: 'LaGlam',
-          slug: 'laglam',
-          color: 'pink',
-        };
-        const nuevoArticulo = {
-          ...data.articulo,
-          medios: medioLaGlam,
-          imagenes_adicionales: (review.fotos?.length || 1) - 1,
-        };
+      const medioLaGlam = medios.find((m) => m.slug === 'laglam') || {
+        id: 5,
+        nombre: 'LaGlam',
+        slug: 'laglam',
+        color: 'pink',
+      };
+      const nuevoArticulo = data.articulo
+        ? {
+            ...data.articulo,
+            medios: medioLaGlam,
+            imagenes_adicionales: (review.fotos?.length || 1) - 1,
+          }
+        : null;
+
+      if (data.publicado) {
+        setFeedback({
+          type: 'success',
+          message: `Publicado en Instagram (@laglamdelbuenvivir): "${review.place_name}".`,
+          link: data.instagramUrl,
+          linkLabel: data.instagramUrl ? 'Ver post en Instagram' : undefined,
+        });
+      } else if (nuevoArticulo) {
         setItems((prev) => [nuevoArticulo, ...prev]);
+        setVistaPanel('pendientes');
+        setPublishArticle(nuevoArticulo);
+        setFeedback({
+          type: 'error',
+          message: `El post de "${review.place_name}" se generó, pero Instagram no lo publicó: ${data.errorPublicacion || 'error desconocido'}. Reinténtalo desde Pendientes.`,
+        });
       }
 
-      setFeedback({
-        type: 'success',
-        message: `¡Post de Instagram generado con éxito para @laglamdelbuenvivir! La reseña de "${review.place_name}" se ha archivado de Google Maps y el nuevo post está disponible en la pestaña "Pendientes" para su revisión o publicación en Instagram.`,
-      });
       router.refresh();
     } catch (err) {
       setFeedback({
@@ -1096,7 +1104,7 @@ export default function ArticleDashboard({
                 ? 'Publica en la web los borradores ya aprobados, sin entrar en WordPress.'
                 : vistaPanel === 'errores'
                   ? 'Reintenta las notas que fallaron al generarse con Gemini o descártalas.'
-                  : 'Convierte tus reseñas gastronómicas de Local Guide en posts para @laglamdelbuenvivir en Instagram.'}
+                  : 'Elige una reseña y públicala directamente en el feed de @laglamdelbuenvivir. Gemini redacta el pie de foto y se envía a Instagram con la foto en alta resolución.'}
           </p>
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">

@@ -746,6 +746,9 @@ export default function ArticleDashboard({
         prev.filter((r) => r.review_id !== review.review_id),
       );
 
+      // Limpiar el estado de carga antes del refresco
+      setGenerandoReviewId(null);
+
       // Añadir el nuevo artículo a la lista de pendientes para que esté disponible de inmediato
       if (data.articulo) {
         const medioLaGlam = medios.find((m) => m.slug === 'laglam') || {
@@ -766,12 +769,12 @@ export default function ArticleDashboard({
         type: 'success',
         message: `¡Post de Instagram generado con éxito para @laglamdelbuenvivir! La reseña de "${review.place_name}" se ha archivado de Google Maps y el nuevo post está disponible en la pestaña "Pendientes" para su revisión o publicación en Instagram.`,
       });
+      router.refresh();
     } catch (err) {
       setFeedback({
         type: 'error',
         message: `Error al generar el post: ${err.message}`,
       });
-    } finally {
       setGenerandoReviewId(null);
     }
   }
@@ -800,16 +803,17 @@ export default function ArticleDashboard({
       setGmapsItems((prev) =>
         prev.filter((r) => r.review_id !== review.review_id),
       );
+      setDescartandoReviewId(null);
       setFeedback({
         type: 'info',
         message: `Reseña de "${review.place_name}" descartada.`,
       });
+      router.refresh();
     } catch (err) {
       setFeedback({
         type: 'error',
         message: `Error al descartar reseña: ${err.message}`,
       });
-    } finally {
       setDescartandoReviewId(null);
     }
   }
@@ -832,6 +836,7 @@ export default function ArticleDashboard({
           data.message ||
           `Sincronización completada. ${data.count} reseña(s) pendiente(s).`,
       });
+      router.refresh();
     } catch (err) {
       setFeedback({
         type: 'error',

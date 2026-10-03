@@ -33,6 +33,7 @@ export default function GoogleMapsCard({
               alt={review.place_name}
               className="h-full w-full object-cover transition-all duration-300"
               loading="lazy"
+              referrerPolicy="no-referrer"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
@@ -85,6 +86,8 @@ export default function GoogleMapsCard({
                       src={url}
                       alt={`Miniatura ${idx + 1}`}
                       className="h-12 w-16 object-cover"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
                     />
                   </button>
                 );

@@ -44,18 +44,22 @@ function LoginForm() {
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-8">
         <header className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700 sm:text-xs sm:tracking-[0.2em]">
-            PANEL SAEZ&amp;NAVES MEDIA GROUP
-          </p>
-          <img
-            src="https://saeznaves.com/wp-content/uploads/2025/12/saeznaves-300x85.png"
-            alt="SAEZ & NAVES"
-            width={300}
-            height={85}
-            className="mx-auto mt-3 h-auto w-[min(100%,260px)] sm:mt-4 sm:w-[240px]"
-          />
-          <h1 className="mt-6 text-2xl font-bold text-slate-900 sm:text-xl">Acceso al panel</h1>
-          <p className="mt-2 text-base text-slate-600 sm:text-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1 mb-4 shadow-sm">
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-indigo-600 sm:text-xs">
+              Panel de Control Editorial
+            </span>
+          </div>
+
+          <h2 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+            SÁEZ <span className="text-indigo-600">&amp;</span> NAVES
+            <span className="block mt-1 text-xs font-semibold tracking-[0.25em] uppercase text-slate-500 sm:text-sm">
+              Media Group
+            </span>
+          </h2>
+          <div className="mx-auto mt-3 h-1 w-16 rounded-full bg-gradient-to-r from-indigo-500 via-rose-500 to-pink-500" />
+
+          <h1 className="mt-6 text-xl font-bold text-slate-900 sm:text-lg">Acceso al panel</h1>
+          <p className="mt-1.5 text-sm text-slate-600">
             Introduce tus credenciales para revisar y publicar artículos.
           </p>
         </header>

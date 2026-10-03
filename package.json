@@ -23,7 +23,8 @@
     "recuperar-cuota": "node scripts/recuperar-cuota.cjs",
     "bootstrap-proyecto-nuevo": "node scripts/bootstrap-proyecto-nuevo.cjs",
     "comprobar-uso-supabase": "node scripts/comprobar-uso-supabase.cjs",
-    "configurar-wordpress-medios": "node scripts/configurar-wordpress-medios.cjs"
+    "configurar-wordpress-medios": "node scripts/configurar-wordpress-medios.cjs",
+    "gmaps": "node scripts/sincronizar-google-maps.cjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",

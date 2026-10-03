@@ -4,6 +4,7 @@ import PipelineStatusBanner from '../components/PipelineStatusBanner';
 import {
   getArticulosAprobados,
   getArticulosPendientes,
+  getGoogleMapsReviews,
   getMediosPanel,
   getNotasConError,
 } from '../lib/supabase';
@@ -15,14 +16,16 @@ export default async function DashboardPage() {
   let articulosAprobados = [];
   let notasConError = [];
   let medios = [];
+  let googleMapsReviews = [];
   let error = null;
 
   try {
-    [articulos, articulosAprobados, notasConError, medios] = await Promise.all([
+    [articulos, articulosAprobados, notasConError, medios, googleMapsReviews] = await Promise.all([
       getArticulosPendientes(),
       getArticulosAprobados(),
       getNotasConError(),
       getMediosPanel(),
+      getGoogleMapsReviews(),
     ]);
   } catch (err) {
     error = err.message;
@@ -31,20 +34,30 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
-        <header className="mb-8 flex flex-col items-center px-1 text-center sm:mb-10 sm:px-2">
-          <div className="flex w-full max-w-7xl items-start justify-end">
+        <header className="relative mb-8 flex flex-col items-center px-1 text-center sm:mb-10 sm:px-2">
+          <div className="flex w-full items-center justify-between pb-4 sm:pb-6">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" title="Sistema activo" />
+              <span className="text-xs font-semibold tracking-wider uppercase text-slate-400">Online</span>
+            </div>
             <LogoutButton />
           </div>
-          <p className="text-xs font-semibold uppercase leading-relaxed tracking-[0.12em] text-slate-700 sm:text-sm sm:tracking-[0.2em]">
-            PANEL SAEZ&amp;NAVES MEDIA GROUP
-          </p>
-          <img
-            src="https://saeznaves.com/wp-content/uploads/2025/12/saeznaves-300x85.png"
-            alt="SAEZ & NAVES"
-            width={300}
-            height={85}
-            className="mt-3 h-auto w-[min(100%,260px)] sm:mt-4 sm:w-[300px]"
-          />
+
+          <div className="flex flex-col items-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white px-4 py-1.5 shadow-sm mb-3">
+              <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-indigo-600 sm:text-xs">
+                Panel de Control Editorial
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              SÁEZ <span className="text-indigo-600">&amp;</span> NAVES
+              <span className="block mt-1 text-sm font-semibold tracking-[0.3em] uppercase text-slate-500 sm:text-base sm:tracking-[0.35em]">
+                Media Group
+              </span>
+            </h1>
+            <div className="mt-3.5 h-1 w-20 rounded-full bg-gradient-to-r from-indigo-500 via-rose-500 to-pink-500" />
+          </div>
         </header>
 
         <PipelineStatusBanner />
@@ -60,6 +73,7 @@ export default async function DashboardPage() {
             articulosAprobados={articulosAprobados}
             notasConError={notasConError}
             medios={medios}
+            googleMapsReviews={googleMapsReviews}
           />
         )}
       </div>

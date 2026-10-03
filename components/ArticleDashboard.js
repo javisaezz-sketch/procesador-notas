@@ -7,6 +7,7 @@ import PublishModal from './PublishModal';
 import ReenviarMedioModal from './ReenviarMedioModal';
 import ApprovedArticleCard from './ApprovedArticleCard';
 import ErrorNotaCard from './ErrorNotaCard';
+import GoogleMapsCard from './GoogleMapsCard';
 import MedioLogo, { MedioBadge } from './MedioLogo';
 import { agruparPorMedio, esMedioInstagram, getMedioTheme, ordenarMedios } from '@/lib/medios';
 
@@ -141,12 +142,14 @@ export default function ArticleDashboard({
   articulosAprobados = [],
   notasConError = [],
   medios = [],
+  googleMapsReviews = [],
 }) {
   const router = useRouter();
   const [vistaPanel, setVistaPanel] = useState('pendientes');
   const [items, setItems] = useState(articulos);
   const [approvedItems, setApprovedItems] = useState(articulosAprobados);
   const [errorItems, setErrorItems] = useState(notasConError);
+  const [gmapsItems, setGmapsItems] = useState(googleMapsReviews);
   const [filtroMedio, setFiltroMedio] = useState('todos');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [publishArticle, setPublishArticle] = useState(null);
@@ -166,6 +169,11 @@ export default function ArticleDashboard({
   const [anulandoId, setAnulandoId] = useState(null);
   const [reintentandoId, setReintentandoId] = useState(null);
   const [descartandoId, setDescartandoId] = useState(null);
+  const [generandoReviewId, setGenerandoReviewId] = useState(null);
+  const [descartandoReviewId, setDescartandoReviewId] = useState(null);
+  const [sincronizandoMaps, setSincronizandoMaps] = useState(false);
+  const [busquedaMaps, setBusquedaMaps] = useState('');
+  const [ciudadFiltroMaps, setCiudadFiltroMaps] = useState('todas');
   const [feedback, setFeedback] = useState(null);
   const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
   const [selectedApprovedIds, setSelectedApprovedIds] = useState([]);
@@ -175,6 +183,10 @@ export default function ArticleDashboard({
   useEffect(() => {
     setItems(articulos);
   }, [articulos]);
+
+  useEffect(() => {
+    setGmapsItems(googleMapsReviews);
+  }, [googleMapsReviews]);
 
   useEffect(() => {
     setApprovedItems(articulosAprobados);
@@ -214,7 +226,9 @@ export default function ArticleDashboard({
       ? items
       : vistaPanel === 'aprobados'
         ? approvedItems
-        : errorItems;
+        : vistaPanel === 'errores'
+          ? errorItems
+          : gmapsItems;
 
   const mediosDisponibles = useMemo(() => {
     const map = new Map();
@@ -246,6 +260,28 @@ export default function ArticleDashboard({
   );
 
   const borradoresPendientesWeb = approvedItems.length;
+
+  const ciudadesMapsDisponibles = useMemo(() => {
+    const set = new Set();
+    gmapsItems.forEach((r) => {
+      if (r.city?.trim()) set.add(r.city.trim());
+    });
+    return Array.from(set).sort();
+  }, [gmapsItems]);
+
+  const reviewsMapsFiltradas = useMemo(() => {
+    return gmapsItems.filter((r) => {
+      if (ciudadFiltroMaps !== 'todas' && r.city !== ciudadFiltroMaps) {
+        return false;
+      }
+      if (!busquedaMaps.trim()) return true;
+      const q = busquedaMaps.toLowerCase().trim();
+      const nombre = (r.place_name || '').toLowerCase();
+      const ciudad = (r.city || '').toLowerCase();
+      const texto = (r.texto_original || '').toLowerCase();
+      return nombre.includes(q) || ciudad.includes(q) || texto.includes(q);
+    });
+  }, [gmapsItems, busquedaMaps, ciudadFiltroMaps]);
 
   function marcarRevisionModificada() {
     setRevisionListaPublicar(false);
@@ -678,6 +714,134 @@ export default function ArticleDashboard({
     }
   }
 
+  async function handleGenerarPostGoogleMaps({
+    review,
+    fotoSeleccionadaUrl,
+    instruccionesEditor,
+  }) {
+    setGenerandoReviewId(review.review_id);
+    setFeedback(null);
+
+    try {
+      const res = await fetch(
+        `/api/google-maps/${encodeURIComponent(review.review_id)}/generar`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            review,
+            fotoSeleccionadaUrl,
+            instruccionesEditor,
+          }),
+        },
+      );
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo generar el post para Instagram');
+      }
+
+      // Quitar reseña de la lista de Google Maps
+      setGmapsItems((prev) =>
+        prev.filter((r) => r.review_id !== review.review_id),
+      );
+
+      // Añadir el nuevo artículo a la lista de pendientes para que esté disponible de inmediato
+      if (data.articulo) {
+        const medioLaGlam = medios.find((m) => m.slug === 'laglam') || {
+          id: 5,
+          nombre: 'LaGlam',
+          slug: 'laglam',
+          color: 'pink',
+        };
+        const nuevoArticulo = {
+          ...data.articulo,
+          medios: medioLaGlam,
+          imagenes_adicionales: (review.fotos?.length || 1) - 1,
+        };
+        setItems((prev) => [nuevoArticulo, ...prev]);
+      }
+
+      setFeedback({
+        type: 'success',
+        message: `¡Post de Instagram generado con éxito para @laglamdelbuenvivir! La reseña de "${review.place_name}" se ha archivado de Google Maps y el nuevo post está disponible en la pestaña "Pendientes" para su revisión o publicación en Instagram.`,
+      });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: `Error al generar el post: ${err.message}`,
+      });
+    } finally {
+      setGenerandoReviewId(null);
+    }
+  }
+
+  async function handleDescartarGoogleMaps(review) {
+    const confirmacion = window.confirm(
+      `¿Descartar la reseña de "${review.place_name}"?\n\nNo volverá a aparecer en la pestaña de Google Maps.`,
+    );
+    if (!confirmacion) return;
+
+    setDescartandoReviewId(review.review_id);
+    setFeedback(null);
+
+    try {
+      const res = await fetch(
+        `/api/google-maps/${encodeURIComponent(review.review_id)}/descartar`,
+        {
+          method: 'POST',
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo descartar la reseña');
+      }
+
+      setGmapsItems((prev) =>
+        prev.filter((r) => r.review_id !== review.review_id),
+      );
+      setFeedback({
+        type: 'info',
+        message: `Reseña de "${review.place_name}" descartada.`,
+      });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: `Error al descartar reseña: ${err.message}`,
+      });
+    } finally {
+      setDescartandoReviewId(null);
+    }
+  }
+
+  async function handleSincronizarGoogleMaps() {
+    setSincronizandoMaps(true);
+    setFeedback(null);
+
+    try {
+      const res = await fetch('/api/google-maps/sync', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo sincronizar');
+      }
+
+      setGmapsItems(data.reviews || []);
+      setFeedback({
+        type: 'success',
+        message:
+          data.message ||
+          `Sincronización completada. ${data.count} reseña(s) pendiente(s).`,
+      });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: `Error al sincronizar con Google Maps: ${err.message}`,
+      });
+    } finally {
+      setSincronizandoMaps(false);
+    }
+  }
+
   async function handleReenviarMedio(articulo, medioId) {
     setReenviandoId(articulo.id);
     setFeedback({
@@ -887,29 +1051,73 @@ export default function ArticleDashboard({
         >
           Errores IA ({errorItems.length})
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setVistaPanel('gmaps');
+            setFiltroMedio('todos');
+          }}
+          className={`inline-flex items-center gap-2 shrink-0 rounded-full px-5 py-3 text-sm font-semibold transition sm:py-2.5 ${
+            vistaPanel === 'gmaps'
+              ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm'
+              : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <svg className="h-4 w-4 text-red-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+          </svg>
+          <span>Google Maps ({gmapsItems.length})</span>
+        </button>
       </div>
 
       <section className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-medium uppercase tracking-wide text-indigo-600 sm:text-sm">
-            Panel editorial
+            {vistaPanel === 'gmaps' ? 'Local Guide & Gastro' : 'Panel editorial'}
           </p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900 sm:text-3xl">
             {vistaPanel === 'pendientes'
               ? 'Artículos pendientes de revisión'
               : vistaPanel === 'aprobados'
                 ? 'Borradores aprobados en WordPress'
-                : 'Notas con error de procesamiento'}
+                : vistaPanel === 'errores'
+                  ? 'Notas con error de procesamiento'
+                  : 'Reseñas de Google Maps'}
           </h1>
           <p className="mt-2 max-w-2xl text-base text-slate-600 sm:text-base">
             {vistaPanel === 'pendientes'
               ? 'Revisa el contenido, elige categoría y publícalo en la web o déjalo en borrador.'
               : vistaPanel === 'aprobados'
                 ? 'Publica en la web los borradores ya aprobados, sin entrar en WordPress.'
-                : 'Reintenta las notas que fallaron al generarse con Gemini o descártalas.'}
+                : vistaPanel === 'errores'
+                  ? 'Reintenta las notas que fallaron al generarse con Gemini o descártalas.'
+                  : 'Convierte tus reseñas gastronómicas de Local Guide en posts para @laglamdelbuenvivir en Instagram.'}
           </p>
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
+          {vistaPanel === 'gmaps' && (
+            <button
+              type="button"
+              disabled={sincronizandoMaps}
+              onClick={handleSincronizarGoogleMaps}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              <svg
+                className={`h-4 w-4 text-slate-500 ${sincronizandoMaps ? 'animate-spin' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <span>{sincronizandoMaps ? 'Sincronizando...' : 'Sincronizar con Maps'}</span>
+            </button>
+          )}
           <div className="inline-flex w-fit shrink-0 items-center rounded-full bg-indigo-50 px-5 py-2.5 text-base font-medium text-indigo-700 ring-1 ring-indigo-100 sm:px-4 sm:py-2 sm:text-sm">
             {vistaPanel === 'pendientes' ? (
               <>
@@ -920,9 +1128,13 @@ export default function ArticleDashboard({
                 {borradoresPendientesWeb} borrador
                 {borradoresPendientesWeb === 1 ? '' : 'es'} por publicar
               </>
-            ) : (
+            ) : vistaPanel === 'errores' ? (
               <>
                 {errorItems.length} error{errorItems.length === 1 ? '' : 'es'}
+              </>
+            ) : (
+              <>
+                {gmapsItems.length} reseña{gmapsItems.length === 1 ? '' : 's'}
               </>
             )}
           </div>
@@ -968,7 +1180,7 @@ export default function ArticleDashboard({
         </div>
       )}
 
-      {mediosDisponibles.length > 1 && (
+      {vistaPanel !== 'gmaps' && mediosDisponibles.length > 1 && (
         <div className="-mx-3 mb-6 flex gap-2.5 overflow-x-auto px-3 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
           <button
             type="button"
@@ -1030,7 +1242,131 @@ export default function ArticleDashboard({
         </div>
       )}
 
-      {itemsFiltrados.length === 0 ? (
+      {vistaPanel === 'gmaps' ? (
+        gmapsItems.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-pink-50 text-pink-600 mb-3">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+              </svg>
+            </div>
+            <p className="text-xl font-semibold text-slate-900 sm:text-lg">
+              No hay reseñas pendientes de Google Maps
+            </p>
+            <p className="mt-2 text-base text-slate-500 sm:text-sm max-w-md mx-auto">
+              Todas las reseñas han sido publicadas o descartadas. Puedes sincronizar para comprobar si hay nuevas reseñas en tu perfil de Local Guide.
+            </p>
+            <button
+              type="button"
+              disabled={sincronizandoMaps}
+              onClick={handleSincronizarGoogleMaps}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50"
+            >
+              {sincronizandoMaps ? 'Sincronizando...' : 'Sincronizar con Maps ahora'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Barra de búsqueda y filtro por ciudad */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative flex-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                  <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={busquedaMaps}
+                  onChange={(e) => setBusquedaMaps(e.target.value)}
+                  placeholder="Buscar restaurante, local o ciudad..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-pink-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-pink-500"
+                />
+                {busquedaMaps && (
+                  <button
+                    type="button"
+                    onClick={() => setBusquedaMaps('')}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {ciudadesMapsDisponibles.length > 1 && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-semibold text-slate-500">Ciudad:</span>
+                  <select
+                    value={ciudadFiltroMaps}
+                    onChange={(e) => setCiudadFiltroMaps(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800 focus:border-pink-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-pink-500"
+                  >
+                    <option value="todas">Todas las ubicaciones ({gmapsItems.length})</option>
+                    {ciudadesMapsDisponibles.map((ciudad) => {
+                      const count = gmapsItems.filter((r) => r.city === ciudad).length;
+                      return (
+                        <option key={ciudad} value={ciudad}>
+                          {ciudad} ({count})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Contador de reseñas activas */}
+            <div className="flex items-center justify-between px-1 text-xs text-slate-500">
+              <span className="font-medium">
+                Mostrando <strong className="text-slate-800">{reviewsMapsFiltradas.length}</strong> de {gmapsItems.length} reseñas gastronómicas (todas de ★★★★★ 5 estrellas)
+              </span>
+              {(busquedaMaps || ciudadFiltroMaps !== 'todas') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBusquedaMaps('');
+                    setCiudadFiltroMaps('todas');
+                  }}
+                  className="font-semibold text-pink-600 hover:text-pink-800"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+
+            {reviewsMapsFiltradas.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+                <p className="text-base font-medium text-slate-700">
+                  No se encontraron reseñas con los filtros actuales.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBusquedaMaps('');
+                    setCiudadFiltroMaps('todas');
+                  }}
+                  className="mt-3 text-xs font-semibold text-pink-600 hover:text-pink-800"
+                >
+                  Ver todas las {gmapsItems.length} reseñas
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {reviewsMapsFiltradas.map((review) => (
+                  <GoogleMapsCard
+                    key={review.review_id}
+                    review={review}
+                    isGenerando={generandoReviewId === review.review_id}
+                    isDescartando={descartandoReviewId === review.review_id}
+                    onGenerar={handleGenerarPostGoogleMaps}
+                    onDescartar={handleDescartarGoogleMaps}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      ) : itemsFiltrados.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
           <p className="text-xl font-semibold text-slate-900 sm:text-lg">
             {vistaPanel === 'pendientes'

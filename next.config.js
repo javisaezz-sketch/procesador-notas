@@ -4,6 +4,7 @@ require('dotenv').config({ path: '.env' });
 const nextConfig = {
   outputFileTracingIncludes: {
     '/api/articulos/[id]/publicar': ['./lib/logos-aviso/**/*'],
+    '/api/pipeline/ejecutar': ['./lib/**/*'],
   },
 };
 

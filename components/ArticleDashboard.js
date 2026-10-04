@@ -212,6 +212,7 @@ export default function ArticleDashboard({
   const [feedback, setFeedback] = useState(null);
   const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
+  const [pipelineEnMarcha, setPipelineEnMarcha] = useState(false);
   const [selectedApprovedIds, setSelectedApprovedIds] = useState([]);
   const [publicandoLote, setPublicandoLote] = useState(false);
   const [revisionListaPublicar, setRevisionListaPublicar] = useState(false);
@@ -280,6 +281,64 @@ export default function ArticleDashboard({
     }
     router.refresh();
     window.setTimeout(() => setRefrescando(false), 800);
+  }
+
+  async function handlePonerEnMarcha() {
+    if (pipelineEnMarcha || refrescando) return;
+
+    setPipelineEnMarcha(true);
+    setFeedback({
+      type: 'info',
+      message: 'Pipeline en marcha: lee el correo, publica lo programado y genera las notas pendientes.',
+    });
+
+    try {
+      const response = await fetch('/api/pipeline/ejecutar', { method: 'POST' });
+      const raw = await response.text();
+      let data = {};
+
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { error: raw };
+      }
+
+      if (response.status === 409) {
+        setFeedback({
+          type: 'info',
+          message: data.error || 'El pipeline ya está en marcha.',
+        });
+        return;
+      }
+
+      if (!response.ok || !data.ok) {
+        const bruto = `${data.error || ''} ${data.message || ''} ${raw || ''}`;
+        if (/tiempo|timeout|504|FUNCTION_INVOCATION|An error occurred/i.test(bruto)) {
+          throw new Error('timeout');
+        }
+        throw new Error(data.error || data.message || 'No se pudo poner en marcha el pipeline');
+      }
+
+      setFeedback({ type: 'success', message: data.message });
+      setUltimaActualizacion(new Date());
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('panel-refresh'));
+      }
+      if (vistaPanel === 'gmaps') {
+        cargarGoogleMaps(true);
+      }
+      router.refresh();
+    } catch (error) {
+      const cortado = error.message === 'timeout';
+      setFeedback({
+        type: 'error',
+        message: cortado
+          ? 'El pipeline se ha cortado por tiempo. Pulsa Actualizar: parte del trabajo puede haber quedado hecha.'
+          : error.message,
+      });
+    } finally {
+      setPipelineEnMarcha(false);
+    }
   }
 
   const listaActiva =
@@ -1312,6 +1371,34 @@ export default function ArticleDashboard({
                 />
               </svg>
               <span>{refrescando ? 'Actualizando...' : 'Actualizar'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePonerEnMarcha}
+              disabled={pipelineEnMarcha || refrescando}
+              className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+              title="Leer el correo y generar las notas pendientes ahora"
+            >
+              <svg
+                className={`h-4 w-4 ${pipelineEnMarcha ? 'animate-spin' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>{pipelineEnMarcha ? 'En marcha...' : 'Poner en marcha'}</span>
             </button>
           </div>
           <p className="text-xs text-slate-500 sm:text-right">

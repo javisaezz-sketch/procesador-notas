@@ -104,7 +104,11 @@ export default function PipelineStatusBanner() {
     ? `Ejecutado ${fecha}. ${estado.emails_nuevas ?? 0} email(s) nuevos, ${estado.articulos_generados ?? 0} artículo(s) generados.`
     : 'Pipeline ejecutado correctamente.';
 
-  if (!estado.ok) {
+  if (estado.fatal?.fase === 'en_marcha') {
+    tone = 'run';
+    titulo = 'Pipeline en marcha';
+    detalle = 'Está leyendo el correo y generando artículos. Pulsa Actualizar en un momento.';
+  } else if (!estado.ok) {
     tone = 'error';
     titulo = 'Último pipeline fallido';
     detalle = `${resumirFatal(estado.fatal)}${fecha ? ` · ${fecha}` : ''}`;
@@ -119,7 +123,9 @@ export default function PipelineStatusBanner() {
       ? 'border-red-200 bg-red-50 text-red-900'
       : tone === 'warn'
         ? 'border-amber-200 bg-amber-50 text-amber-900'
-        : 'border-emerald-200 bg-emerald-50 text-emerald-900';
+        : tone === 'run'
+          ? 'border-indigo-200 bg-indigo-50 text-indigo-900'
+          : 'border-emerald-200 bg-emerald-50 text-emerald-900';
 
   return (
     <div className={`mb-6 rounded-2xl border px-5 py-4 ${clases}`}>

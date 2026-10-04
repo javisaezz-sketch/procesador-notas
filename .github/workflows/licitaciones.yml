@@ -1,0 +1,71 @@
+name: Licitaciones en plazo (diario)
+
+on:
+  schedule:
+    # 05:40 UTC es las 7:40 en horario de verano; 06:40 UTC es las 7:40 en horario de invierno.
+    # El script solo envía cuando en Madrid son las 7, y no antes del martes 6 de octubre de 2026.
+    - cron: '40 5 * * *'
+    - cron: '40 6 * * *'
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: viernes (desde el viernes 2) o diario (de 7:40 a 7:40)
+        default: viernes
+        type: choice
+        options:
+          - viernes
+          - diario
+
+concurrency:
+  group: licitaciones-diarias
+  cancel-in-progress: false
+
+jobs:
+  correo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Recuperar licitaciones ya vistas
+        uses: actions/cache@v4
+        with:
+          path: licitaciones/estado.json
+          key: licitaciones-estado-${{ github.run_id }}
+          restore-keys: licitaciones-estado-
+
+      - name: Comprobar el buzón
+        run: test -n "$LICITACIONES_SMTP_PASS" || (echo "Falta el secret LICITACIONES_SMTP_PASS" && exit 1)
+        env:
+          LICITACIONES_SMTP_PASS: ${{ secrets.LICITACIONES_SMTP_PASS }}
+
+      - name: Buscar y enviar
+        run: node licitaciones/ejecutar.cjs --modo ${{ github.event_name == 'schedule' && 'programado' || github.event.inputs.modo || 'viernes' }}
+        env:
+          LICITACIONES_EMAIL_TO: javisaezz@gmail.com
+          LICITACIONES_SMTP_HOST: smtp.gmail.com
+          LICITACIONES_SMTP_PORT: "587"
+          LICITACIONES_SMTP_USER: javisaezz@gmail.com
+          LICITACIONES_SMTP_PASS: ${{ secrets.LICITACIONES_SMTP_PASS }}
+          LICITACIONES_EMAIL_FROM: Licitaciones <javisaezz@gmail.com>
+
+      - name: Guardar el correo generado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: correo-licitaciones
+          path: |
+            licitaciones/salida/ultimo.txt
+            licitaciones/salida/ultimo.html
+          if-no-files-found: ignore

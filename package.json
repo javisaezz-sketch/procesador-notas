@@ -24,7 +24,8 @@
     "bootstrap-proyecto-nuevo": "node scripts/bootstrap-proyecto-nuevo.cjs",
     "comprobar-uso-supabase": "node scripts/comprobar-uso-supabase.cjs",
     "configurar-wordpress-medios": "node scripts/configurar-wordpress-medios.cjs",
-    "gmaps": "node scripts/sincronizar-google-maps.cjs"
+    "gmaps": "node scripts/sincronizar-google-maps.cjs",
+    "licitaciones": "node licitaciones/ejecutar.cjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",

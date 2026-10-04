@@ -726,7 +726,7 @@ export default function ArticleDashboard({
 
       setFeedback({
         type: 'success',
-        message: `Publicado en ${data.medio}. Ya está visible en la web.`,
+        message: `Publicado en ${data.medio}. Ya está visible en la web.${avisoAgenciaTexto(data.avisoAgencia)}`,
         link: data.wordpressPostUrl,
         linkLabel: 'Ver artículo publicado',
       });

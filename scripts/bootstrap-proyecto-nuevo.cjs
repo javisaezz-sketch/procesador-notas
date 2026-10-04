@@ -60,9 +60,11 @@ async function main() {
       prompt_personalidad: leerPrompt('prompt-travelicius.txt') || promptGenerico('Travelicius'),
       categorias_json: [
         { slug: 'negocio', nombre: 'Business & Strategy' },
+        { slug: 'destino', nombre: 'Destinos' },
         { slug: 'gastro', nombre: 'Gastro & Gourmet' },
         { slug: 'hotels', nombre: 'Hospitality & Hotels' },
         { slug: 'ibiza', nombre: 'Ibiza' },
+        { slug: 'radio', nombre: 'Radio' },
       ],
     },
     {

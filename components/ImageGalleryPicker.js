@@ -12,6 +12,8 @@ export default function ImageGalleryPicker({
   publicarUrls = [],
   onDestacadaChange,
   onPublicarChange,
+  maxSeleccion,
+  descripcion,
 }) {
   if (!imagenes.length) {
     return (
@@ -29,6 +31,9 @@ export default function ImageGalleryPicker({
 
   function togglePublicar(url) {
     const incluida = urlEnSeleccion(url, publicarUrls);
+    if (!incluida && maxSeleccion && publicarUrls.length >= maxSeleccion) {
+      return;
+    }
     const nextUrls = incluida
       ? publicarUrls.filter((item) => !mismaImagenStorage(item, url))
       : [
@@ -46,6 +51,9 @@ export default function ImageGalleryPicker({
 
   function marcarDestacada(url) {
     if (!urlEnSeleccion(url, publicarUrls)) {
+      if (maxSeleccion && publicarUrls.length >= maxSeleccion) {
+        return;
+      }
       const urlCanon =
         imagenes.find((imagen) => mismaImagenStorage(imagen.url, url))?.url ??
         url;
@@ -70,6 +78,7 @@ export default function ImageGalleryPicker({
         <p className="text-sm text-slate-500">
           {publicarUrls.length} de {imagenes.length} seleccionada
           {publicarUrls.length === 1 ? '' : 's'}
+          {maxSeleccion ? ` · máximo ${maxSeleccion}` : ''}
         </p>
       </div>
 
@@ -131,9 +140,8 @@ export default function ImageGalleryPicker({
       </div>
 
       <p className="text-sm text-slate-500">
-        Marca qué fotos quieres publicar y elige la destacada con la estrella.
-        Solo las imágenes seleccionadas aparecerán en el artículo; la destacada
-        se envía además como imagen principal de WordPress.
+        {descripcion ||
+          'Marca qué fotos quieres publicar y elige la destacada con la estrella. Solo las imágenes seleccionadas aparecerán en el artículo; la destacada se envía además como imagen principal de WordPress.'}
       </p>
     </div>
   );

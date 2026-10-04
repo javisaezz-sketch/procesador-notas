@@ -156,6 +156,12 @@ export default function ContentModal({
                 publicarUrls={publicarUrls}
                 onDestacadaChange={onDestacadaChange}
                 onPublicarChange={onPublicarChange}
+                maxSeleccion={articulo.medios?.slug === 'laglam' ? 10 : undefined}
+                descripcion={
+                  articulo.medios?.slug === 'laglam'
+                    ? 'Marca las fotos del post. Una sola se publica como imagen. Si marcas varias, Instagram las sube en carrusel (máximo 10). La estrella es la primera.'
+                    : undefined
+                }
               />
             )}
           </div>

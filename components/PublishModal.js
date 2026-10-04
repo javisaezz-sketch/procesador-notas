@@ -69,7 +69,10 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
         {esInstagram ? (
           tieneImagen ? (
             <p className="mt-3 rounded-xl border border-pink-200 bg-pink-50 px-4 py-3.5 text-base text-pink-900 sm:text-sm">
-              📸 <strong>Foto lista:</strong> Se enviará la foto destacada junto con el pie de foto formateado y los 10 hashtags oficiales.
+              📸 <strong>{totalPublicar > 1 ? `Carrusel de ${totalPublicar} fotos` : 'Foto lista'}:</strong>{' '}
+              {totalPublicar > 1
+                ? 'Se publicará un carrusel en Instagram con las fotos seleccionadas, el pie de foto y los 10 hashtags oficiales.'
+                : 'Se enviará la foto destacada junto con el pie de foto formateado y los 10 hashtags oficiales.'}
             </p>
           ) : (
             <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-base text-amber-900 sm:text-sm">

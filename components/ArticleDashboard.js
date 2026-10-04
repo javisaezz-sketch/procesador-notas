@@ -717,6 +717,7 @@ export default function ArticleDashboard({
   async function handleGenerarPostGoogleMaps({
     review,
     fotoSeleccionadaUrl,
+    fotosSeleccionadas,
     instruccionesEditor,
   }) {
     setGenerandoReviewId(review.review_id);
@@ -731,6 +732,7 @@ export default function ArticleDashboard({
           body: JSON.stringify({
             review,
             fotoSeleccionadaUrl,
+            fotosSeleccionadas,
             instruccionesEditor,
           }),
         },

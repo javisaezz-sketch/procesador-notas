@@ -4,13 +4,13 @@ import { generarPostInstagramDesdeReview } from '@/lib/googleMaps';
 import { publicarArticulo } from '@/lib/publicarArticulo';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 export async function POST(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const { review, fotoSeleccionadaUrl, instruccionesEditor } = body;
+    const { review, fotoSeleccionadaUrl, fotosSeleccionadas, instruccionesEditor } = body;
 
     if (!review) {
       return NextResponse.json(
@@ -29,6 +29,7 @@ export async function POST(request, { params }) {
       supabase,
       review: reviewData,
       fotoSeleccionadaUrl,
+      fotosSeleccionadas,
       instruccionesEditor,
     });
 

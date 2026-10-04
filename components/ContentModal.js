@@ -166,7 +166,7 @@ export default function ContentModal({
                 Publicación directa en Instagram (@laglamdelbuenvivir)
               </p>
               <p className="mt-1 text-sm text-pink-800">
-                El texto se publicará como pie de foto (caption) en el feed de Instagram junto con la foto seleccionada y los 10 hashtags oficiales de LaGlam.
+                El texto se publicará como pie de foto en Instagram. Si marcas varias fotos, se enviarán como carrusel (máximo 10) con los hashtags oficiales de LaGlam.
               </p>
             </div>
           ) : articulo.sin_notificacion ? (

@@ -16,6 +16,14 @@ export default function GoogleMapsCard({
   const [mostrarInstrucciones, setMostrarInstrucciones] = useState(false);
   const [instrucciones, setInstrucciones] = useState('');
 
+  function ponerDePortada(url) {
+    setFotoSeleccionada(url);
+    setFotosSeleccionadas((prev) => {
+      const resto = prev.filter((item) => item !== url);
+      return [url, ...resto].slice(0, 10);
+    });
+  }
+
   const texto = review.texto_original || '';
   const esTextoLargo = texto.length > 220;
   const textoVisible =
@@ -28,11 +36,11 @@ export default function GoogleMapsCard({
       {/* 1. Cabecera con imagen destacada seleccionable */}
       {fotos.length > 0 && (
         <div className="relative bg-slate-900">
-          <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100 sm:aspect-[16/9]">
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-stone-100 sm:aspect-[16/9]">
             <img
               src={fotoSeleccionada || fotos[0]}
               alt={review.place_name}
-              className="h-full w-full object-cover transition-all duration-300"
+              className="h-full w-full object-contain transition-all duration-300"
               loading="lazy"
               referrerPolicy="no-referrer"
             />
@@ -70,38 +78,40 @@ export default function GoogleMapsCard({
           {fotos.length > 1 && (
             <div className="space-y-2 p-2.5 bg-slate-900/90">
               <p className="px-0.5 text-[11px] font-medium text-slate-300">
-                Marca las fotos del carrusel (máx. 10). La previsualizada irá la primera.
+                Pulsa una foto para ponerla la primera. La 1 es la portada. Se publica entera, sin recortar.
               </p>
               <div className="flex gap-2 overflow-x-auto scrollbar-thin">
                 {fotos.map((url, idx) => {
-                  const esActiva = (fotoSeleccionada || fotos[0]) === url;
                   const estaIncluida = fotosSeleccionadas.includes(url);
+                  const orden = fotosSeleccionadas.indexOf(url);
                   return (
                     <div key={idx} className="relative shrink-0">
                       <button
                         type="button"
-                        onClick={() => {
-                          setFotoSeleccionada(url);
-                          setFotosSeleccionadas((prev) =>
-                            prev.includes(url) ? prev : [...prev, url].slice(0, 10),
-                          );
-                        }}
+                        onClick={() => ponerDePortada(url)}
                         className={`relative overflow-hidden rounded-lg transition-all ${
-                          esActiva
-                            ? 'ring-2 ring-pink-500 ring-offset-2 ring-offset-slate-900 scale-105'
+                          orden === 0
+                            ? 'ring-2 ring-pink-500 ring-offset-2 ring-offset-slate-900'
                             : estaIncluida
                               ? 'opacity-100'
                               : 'opacity-50 hover:opacity-80'
                         }`}
-                        title={`Vista previa foto ${idx + 1}`}
+                        title={orden === 0 ? 'Portada del carrusel' : `Poner la foto ${idx + 1} la primera`}
                       >
                         <img
                           src={url}
                           alt={`Miniatura ${idx + 1}`}
-                          className="h-12 w-16 object-cover"
+                          className="h-12 w-16 object-contain bg-stone-100"
                           loading="lazy"
                           referrerPolicy="no-referrer"
                         />
+                        {estaIncluida && (
+                          <span className={`absolute bottom-0.5 left-0.5 rounded px-1 text-[10px] font-bold leading-4 ${
+                            orden === 0 ? 'bg-pink-500 text-white' : 'bg-black/70 text-white'
+                          }`}>
+                            {orden + 1}
+                          </span>
+                        )}
                       </button>
                       <button
                         type="button"

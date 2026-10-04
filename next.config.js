@@ -2,6 +2,7 @@ require('dotenv').config({ path: '.env' });
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['sharp'],
   outputFileTracingIncludes: {
     '/api/articulos/[id]/publicar': ['./lib/logos-aviso/**/*'],
     '/api/pipeline/ejecutar': ['./lib/**/*'],

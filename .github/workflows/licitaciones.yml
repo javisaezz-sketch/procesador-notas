@@ -1,0 +1,66 @@
+name: Licitaciones en plazo (diario)
+
+on:
+  schedule:
+    # 05:00 UTC: 07:00 en horario de verano y 06:00 en horario de invierno, hora de Madrid.
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      max_paginas_inicial:
+        description: Páginas por fuente si todavía no hay estado (500 avisos por página)
+        default: '30'
+        required: false
+      atras_dias:
+        description: Días hacia atrás en el primer recorrido
+        default: '21'
+        required: false
+
+concurrency:
+  group: licitaciones-diarias
+  cancel-in-progress: false
+
+jobs:
+  correo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Recuperar licitaciones ya vistas
+        uses: actions/cache@v4
+        with:
+          path: licitaciones/estado.json
+          key: licitaciones-estado-${{ github.run_id }}
+          restore-keys: licitaciones-estado-
+
+      - name: Buscar y enviar
+        run: node licitaciones/ejecutar.cjs --max-paginas 10 --max-paginas-inicial ${{ github.event.inputs.max_paginas_inicial || '30' }} --atras-dias ${{ github.event.inputs.atras_dias || '21' }}
+        env:
+          LICITACIONES_EMAIL_TO: ${{ secrets.LICITACIONES_EMAIL_TO }}
+          LICITACIONES_SMTP_HOST: ${{ secrets.LICITACIONES_SMTP_HOST }}
+          LICITACIONES_SMTP_PORT: ${{ secrets.LICITACIONES_SMTP_PORT }}
+          LICITACIONES_SMTP_USER: ${{ secrets.LICITACIONES_SMTP_USER }}
+          LICITACIONES_SMTP_PASS: ${{ secrets.LICITACIONES_SMTP_PASS }}
+          LICITACIONES_EMAIL_FROM: ${{ secrets.LICITACIONES_EMAIL_FROM }}
+          LICITACIONES_SMTP_SECURE: ${{ secrets.LICITACIONES_SMTP_SECURE }}
+
+      - name: Guardar el correo generado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: correo-licitaciones
+          path: |
+            licitaciones/salida/ultimo.txt
+            licitaciones/salida/ultimo.html
+          if-no-files-found: ignore

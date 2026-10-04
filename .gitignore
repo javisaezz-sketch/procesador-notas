@@ -10,3 +10,8 @@ out/
 
 # credenciales de Google Drive
 .secretos-google/
+
+# estado y correo del buscador de licitaciones
+licitaciones/estado.json
+licitaciones/estado.json.tmp
+licitaciones/salida/

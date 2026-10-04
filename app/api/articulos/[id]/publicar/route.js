@@ -10,6 +10,8 @@ export async function POST(request, { params }) {
     const categoriaSlug = body.categoriaSlug;
     const publicarEnWeb = body.publicarEnWeb === true;
     const programarEn = body.programarEn || null;
+    const notificar = body.notificar === true ? true : body.notificar === false ? false : null;
+    const emailNotificacion = body.emailNotificacion || null;
 
     if (!articuloId || Number.isNaN(articuloId)) {
       return NextResponse.json(
@@ -30,6 +32,8 @@ export async function POST(request, { params }) {
         cuando: programarEn,
         categoriaSlug,
         publicarEnWeb,
+        notificar,
+        emailNotificacion,
       });
       return NextResponse.json({
         ok: true,
@@ -40,7 +44,10 @@ export async function POST(request, { params }) {
       });
     }
 
-    const resultado = await publicarArticulo(articuloId, categoriaSlug);
+    const resultado = await publicarArticulo(articuloId, categoriaSlug, {
+      notificar,
+      emailNotificacion,
+    });
 
     if (resultado.esInstagram) {
       return NextResponse.json({

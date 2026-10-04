@@ -174,6 +174,27 @@ export default function ContentModal({
               <p className="mt-1 text-sm text-pink-800">
                 El texto se publicará como pie de foto en Instagram. Si marcas varias fotos, se enviarán como carrusel (máximo 10) con los hashtags oficiales de LaGlam.
               </p>
+              {!articulo.sin_notificacion && (
+                <div className="mt-3">
+                  <label
+                    htmlFor="email-notificacion-laglam"
+                    className="mb-1 block text-sm font-semibold text-pink-950"
+                  >
+                    Email de quien envió la nota
+                  </label>
+                  <input
+                    id="email-notificacion-laglam"
+                    type="email"
+                    value={emailNotificacion}
+                    onChange={(event) => onEmailNotificacionChange(event.target.value)}
+                    placeholder="Sin email detectado"
+                    className="w-full rounded-xl border border-pink-300 bg-white px-4 py-3 text-base text-slate-900 outline-none ring-pink-500 focus:ring-2 sm:py-2.5 sm:text-sm"
+                  />
+                  <p className="mt-2 text-sm text-pink-800">
+                    Al publicar podrás avisar a este correo con el enlace, o desmarcarlo si no quieres notificar.
+                  </p>
+                </div>
+              )}
             </div>
           ) : articulo.sin_notificacion ? (
             <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">

@@ -14,10 +14,16 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
   const categorias = getCategoriasMedio(articulo.medios);
   const [categoriaSlug, setCategoriaSlug] = useState(null);
   const [cuandoLocal, setCuandoLocal] = useState('');
+  const [emailAviso, setEmailAviso] = useState(articulo.email_notificacion || '');
+  const [avisarAgencia, setAvisarAgencia] = useState(
+    Boolean(articulo.email_notificacion) && !articulo.sin_notificacion,
+  );
 
   useEffect(() => {
     setCategoriaSlug(getCategoriaDefaultMedio(articulo.medios));
-  }, [articulo.id, articulo.medios]);
+    setEmailAviso(articulo.email_notificacion || '');
+    setAvisarAgencia(Boolean(articulo.email_notificacion) && !articulo.sin_notificacion);
+  }, [articulo.id, articulo.medios, articulo.email_notificacion, articulo.sin_notificacion]);
   const esInstagram = esMedioInstagram(articulo.medios);
   const totalPublicar = Array.isArray(articulo.imagenes_publicar_urls)
     ? articulo.imagenes_publicar_urls.length
@@ -50,7 +56,22 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
       programarEn = fecha.toISOString();
     }
 
-    onConfirm(catElegida, { publicarEnWeb, programarEn });
+    const notificar = esInstagram && avisarAgencia && !articulo.sin_notificacion;
+    if (notificar && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAviso.trim())) {
+      window.alert('Escribe el email de la agencia o desmarca el aviso.');
+      return;
+    }
+
+    onConfirm(catElegida, {
+      publicarEnWeb,
+      programarEn,
+      ...(esInstagram
+        ? {
+            notificar,
+            emailNotificacion: notificar ? emailAviso.trim() : null,
+          }
+        : {}),
+    });
   }
 
   const minimoLocal = (() => {
@@ -143,6 +164,36 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
               </p>
             )}
           </>
+        )}
+
+        {esInstagram && !articulo.sin_notificacion && (
+          <div className="mt-4 rounded-xl border border-pink-200 bg-pink-50 px-4 py-4">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={avisarAgencia}
+                onChange={(event) => setAvisarAgencia(event.target.checked)}
+                className="mt-1 h-4 w-4 rounded text-pink-600"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-pink-950">
+                  Avisar a la agencia cuando se publique
+                </span>
+                <span className="mt-1 block text-sm text-pink-800">
+                  Se envía un correo con el enlace del post en @laglamdelbuenvivir. Si lo desmarcas, no se avisa.
+                </span>
+              </span>
+            </label>
+            {avisarAgencia && (
+              <input
+                type="email"
+                value={emailAviso}
+                onChange={(event) => setEmailAviso(event.target.value)}
+                placeholder="email de la agencia"
+                className="mt-3 w-full rounded-xl border border-pink-300 bg-white px-3 py-2 text-sm text-slate-900"
+              />
+            )}
+          </div>
         )}
 
         <form ref={formRef} className="mt-5 space-y-5" onSubmit={(event) => event.preventDefault()}>

@@ -548,6 +548,13 @@ export default function ArticleDashboard({
     }
   }
 
+  function avisoAgenciaTexto(aviso) {
+    if (!aviso || aviso.omitido) return '';
+    if (aviso.enviado) return ` Aviso enviado a ${aviso.email}.`;
+    if (aviso.error) return ` El post está publicado, pero no se pudo avisar a la agencia: ${aviso.error}`;
+    return '';
+  }
+
   function avisoBorradorInstagram(data) {
     if (data?.borradorInstagram?.creado) {
       return ' También se ha creado un borrador de Instagram en Pendientes.';
@@ -555,7 +562,11 @@ export default function ArticleDashboard({
     return '';
   }
 
-  async function handlePublicar(articulo, categoriaSlug, { publicarEnWeb = false, programarEn = null } = {}) {
+  async function handlePublicar(
+    articulo,
+    categoriaSlug,
+    { publicarEnWeb = false, programarEn = null, notificar = null, emailNotificacion = null } = {},
+  ) {
     setPublishingId(articulo.id);
     setFeedback({
       type: 'info',
@@ -577,7 +588,13 @@ export default function ArticleDashboard({
       const response = await fetch(`/api/articulos/${articulo.id}/publicar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categoriaSlug, publicarEnWeb, programarEn }),
+        body: JSON.stringify({
+          categoriaSlug,
+          publicarEnWeb,
+          programarEn,
+          notificar,
+          emailNotificacion,
+        }),
       });
 
       const raw = await response.text();
@@ -608,7 +625,11 @@ export default function ArticleDashboard({
         setPublishArticle(null);
         setFeedback({
           type: 'success',
-          message: `"${articulo.titulo_generado}" se publicará en la siguiente pasada del pipeline.`,
+          message: `"${articulo.titulo_generado}" se publicará en la siguiente pasada del pipeline.${
+            notificar && emailNotificacion
+              ? ` Al publicarse se avisará a ${emailNotificacion}.`
+              : ''
+          }`,
         });
         router.refresh();
         return;
@@ -628,10 +649,11 @@ export default function ArticleDashboard({
           data.medio === 'LaGlam' ||
           data.wordpressPostUrl?.includes('instagram.com');
 
+        const avisoLaglam = avisoAgenciaTexto(data.avisoAgencia);
         setFeedback({
           type: 'success',
           message: esIg
-            ? `Publicado con éxito en Instagram (@laglamdelbuenvivir). Ya está visible en el feed.`
+            ? `Publicado con éxito en Instagram (@laglamdelbuenvivir). Ya está visible en el feed.${avisoLaglam}`
             : `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}${avisoBorradorInstagram(data)}`,
           link: data.wordpressPostUrl,
           linkLabel: esIg ? 'Ver post en Instagram' : 'Ver artículo publicado',

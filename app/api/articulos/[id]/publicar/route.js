@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { publicarArticulo, publicarPostEnWordPress } from '@/lib/publicarArticulo';
 import { programarArticulo } from '@/lib/programarPublicacion';
 
+export const maxDuration = 120;
+
 export async function POST(request, { params }) {
   try {
     const { id } = await params;

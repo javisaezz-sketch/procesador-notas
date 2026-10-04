@@ -675,7 +675,17 @@ export default function ArticleDashboard({
 
       router.refresh();
     } catch (error) {
-      setFeedback({ type: 'error', message: error.message });
+      const crudo = String(error.message || '');
+      const cortado =
+        crudo.includes('<!DOCTYPE') ||
+        crudo.length > 400 ||
+        /timeout|504|FUNCTION_INVOCATION/i.test(crudo);
+      setFeedback({
+        type: 'error',
+        message: cortado
+          ? 'La publicación se ha cortado por tiempo. El post sigue en Pendientes: vuelve a pulsar Publicar.'
+          : crudo || 'No se pudo publicar el artículo',
+      });
     } finally {
       setPublishingId(null);
     }
@@ -1630,6 +1640,7 @@ export default function ArticleDashboard({
         <PublishModal
           articulo={publishArticle}
           isPublishing={publishingId === publishArticle.id}
+          error={feedback?.type === 'error' ? feedback.message : ''}
           onClose={() => setPublishArticle(null)}
           onConfirm={(categoriaSlug, opciones) =>
             handlePublicar(publishArticle, categoriaSlug, opciones)

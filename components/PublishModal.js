@@ -9,7 +9,7 @@ import {
 } from '@/lib/medios';
 import { MedioBadge } from './MedioLogo';
 
-export default function PublishModal({ articulo, onClose, onConfirm, isPublishing }) {
+export default function PublishModal({ articulo, onClose, onConfirm, isPublishing, error }) {
   const formRef = useRef(null);
   const categorias = getCategoriasMedio(articulo.medios);
   const [categoriaSlug, setCategoriaSlug] = useState(null);
@@ -234,6 +234,12 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
             </span>
           </label>
 
+          {error && (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {error}
+            </p>
+          )}
+
           <div className="flex flex-col gap-3">
             <button
               type="button"
@@ -246,7 +252,7 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
               }`}
             >
               {isPublishing
-                ? 'Guardando...'
+                ? (esInstagram ? 'Publicando en Instagram...' : 'Guardando...')
                 : cuandoLocal
                   ? (esInstagram ? 'Programar en Instagram' : 'Programar publicación en la web')
                   : (esInstagram ? 'Publicar ahora en Instagram (@laglamdelbuenvivir)' : 'Publicar en la web')}

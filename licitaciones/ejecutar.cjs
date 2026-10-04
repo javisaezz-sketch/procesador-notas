@@ -153,7 +153,7 @@ async function main() {
 
   if (opciones.sinEnvio) return;
   await enviarCorreo(mensaje);
-  console.log(`Correo enviado a ${process.env.LICITACIONES_EMAIL_TO}`);
+  console.log(`Correo enviado a ${process.env.LICITACIONES_EMAIL_TO || 'javisaezz@gmail.com'}`);
 }
 
 main().catch((error) => {

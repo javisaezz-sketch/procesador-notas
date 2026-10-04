@@ -16,14 +16,17 @@ Quedan fuera el catering y los alquileres de espacio, carpa, escenario, sonido, 
 
 En el repositorio de GitHub: Settings → Secrets and variables → Actions.
 
-| Secret | Ejemplo |
+El correo sale hacia **javisaezz@gmail.com**. Para enviarlo hace falta un buzón de salida. Con el mismo Gmail:
+
+| Secret | Valor |
 |---|---|
-| `LICITACIONES_EMAIL_TO` | quien recibe el correo |
-| `LICITACIONES_SMTP_HOST` | `smtp.gmail.com` o el servidor del buzón |
+| `LICITACIONES_SMTP_HOST` | `smtp.gmail.com` |
 | `LICITACIONES_SMTP_PORT` | `587` |
-| `LICITACIONES_SMTP_USER` | la cuenta que envía |
-| `LICITACIONES_SMTP_PASS` | contraseña o contraseña de aplicación |
+| `LICITACIONES_SMTP_USER` | `javisaezz@gmail.com` |
+| `LICITACIONES_SMTP_PASS` | contraseña de aplicación de Google (no la contraseña de entrar al correo) |
 | `LICITACIONES_EMAIL_FROM` | opcional. Si falta, se usa la cuenta SMTP |
+
+La contraseña de aplicación se crea en la cuenta de Google: Seguridad → Verificación en dos pasos → Contraseñas de aplicaciones.
 
 El workflow `.github/workflows/licitaciones.yml` se ejecuta cada día a las 07:00 (horario de verano) o a las 06:00 (horario de invierno). También se puede lanzar a mano en Actions → Licitaciones en plazo.
 

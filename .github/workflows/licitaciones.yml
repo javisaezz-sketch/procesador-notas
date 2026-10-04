@@ -47,7 +47,7 @@ jobs:
       - name: Buscar y enviar
         run: node licitaciones/ejecutar.cjs --max-paginas 10 --max-paginas-inicial ${{ github.event.inputs.max_paginas_inicial || '30' }} --atras-dias ${{ github.event.inputs.atras_dias || '21' }}
         env:
-          LICITACIONES_EMAIL_TO: ${{ secrets.LICITACIONES_EMAIL_TO }}
+          LICITACIONES_EMAIL_TO: javisaezz@gmail.com
           LICITACIONES_SMTP_HOST: ${{ secrets.LICITACIONES_SMTP_HOST }}
           LICITACIONES_SMTP_PORT: ${{ secrets.LICITACIONES_SMTP_PORT }}
           LICITACIONES_SMTP_USER: ${{ secrets.LICITACIONES_SMTP_USER }}

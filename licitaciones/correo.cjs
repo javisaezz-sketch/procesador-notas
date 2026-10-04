@@ -97,13 +97,13 @@ function escapar(valor) {
 }
 
 async function enviarCorreo({ asunto, texto, html }) {
-  const to = process.env.LICITACIONES_EMAIL_TO;
+  const to = process.env.LICITACIONES_EMAIL_TO || 'javisaezz@gmail.com';
   const host = process.env.LICITACIONES_SMTP_HOST;
   const user = process.env.LICITACIONES_SMTP_USER;
   const pass = process.env.LICITACIONES_SMTP_PASS;
   if (!to || !host || !user || !pass) {
     const error = new Error(
-      'Faltan LICITACIONES_EMAIL_TO, LICITACIONES_SMTP_HOST, LICITACIONES_SMTP_USER o LICITACIONES_SMTP_PASS.',
+      'Faltan LICITACIONES_SMTP_HOST, LICITACIONES_SMTP_USER o LICITACIONES_SMTP_PASS.',
     );
     error.codigo = 'SIN_SMTP';
     throw error;

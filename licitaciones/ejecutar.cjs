@@ -83,7 +83,9 @@ async function main() {
   estado.enviadas ||= {};
   const tramo = opciones.modo === 'viernes'
     ? { desde: DESDE_VIERNES, hasta: ahora }
-    : ventanaProgramada(ahora, estado.ultimoHasta);
+    : estado.ultimoHasta
+      ? ventanaProgramada(ahora, estado.ultimoHasta)
+      : { desde: DESDE_VIERNES, hasta: ventanaProgramada(ahora, null).hasta };
   const inicioFeed = madridAEpoch(tramo.desde) - 6 * 60 * 60 * 1000;
   const desdeEpoch = opciones.modo === 'viernes' || !estado.watermark
     ? inicioFeed

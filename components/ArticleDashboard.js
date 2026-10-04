@@ -174,6 +174,7 @@ export default function ArticleDashboard({
   articulos = [],
   articulosAprobados = [],
   notasConError = [],
+  notasEnCola = 0,
   medios = [],
   googleMapsReviews = [],
 }) {
@@ -298,14 +299,14 @@ export default function ArticleDashboard({
       let nuevas = 0;
       let quedan = true;
       let avisos = 0;
-      const maxPasadas = 4;
+      let cortes = 0;
+      const maxPasadas = 6;
 
-      while (quedan && pasada < maxPasadas) {
-        pasada += 1;
-        if (pasada > 1) {
+      while (quedan && pasada < maxPasadas && cortes < 4) {
+        if (pasada > 0) {
           setFeedback({
             type: 'info',
-            message: `Van ${generados} artículos. Sigo con las notas que quedan.`,
+            message: `Van ${generados} artículos. Las que faltan siguen en la cola y se generan ahora.`,
           });
         }
 
@@ -319,29 +320,34 @@ export default function ArticleDashboard({
           data = { error: raw };
         }
 
-        if (response.status === 409) {
+        const bruto = `${data.error || ''} ${data.message || ''} ${raw || ''}`;
+        const cortado = response.status === 409
+          || /tiempo|timeout|504|FUNCTION_INVOCATION|An error occurred/i.test(bruto);
+
+        if (cortado) {
+          cortes += 1;
           setFeedback({
             type: 'info',
-            message: data.error || 'El pipeline ya está en marcha.',
+            message: 'Sigue en marcha. Lo ya leído no se pierde: espera un momento y continúo con la cola.',
           });
-          return;
+          await new Promise((resolve) => window.setTimeout(resolve, 12000));
+          continue;
         }
 
         if (!response.ok || !data.ok) {
-          const bruto = `${data.error || ''} ${data.message || ''} ${raw || ''}`;
-          if (/tiempo|timeout|504|FUNCTION_INVOCATION|An error occurred/i.test(bruto)) {
-            throw new Error('timeout');
-          }
           throw new Error(data.error || data.message || 'No se pudo poner en marcha el pipeline');
         }
 
+        cortes = 0;
+        pasada += 1;
         generados += data.resumen?.articulosGenerados ?? 0;
         nuevas += data.resumen?.emailsNuevas ?? 0;
         avisos += data.resumen?.advertencias ?? 0;
         quedan = Boolean(data.resumen?.quedanNotas);
+        router.refresh();
       }
 
-      const message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.${avisos ? ' Hay avisos: mira la franja de arriba.' : ''}${quedan ? ' Quedan notas: vuelve a pulsarlo.' : ''}`;
+      const message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.${avisos ? ' Hay avisos: mira la franja de arriba.' : ''}${quedan ? ' Quedan notas en la cola: no se han perdido. Vuelve a pulsar Poner en marcha.' : ''}`;
       setFeedback({ type: 'success', message });
       setUltimaActualizacion(new Date());
       if (typeof window !== 'undefined') {
@@ -1357,6 +1363,9 @@ export default function ArticleDashboard({
               {vistaPanel === 'pendientes' ? (
                 <>
                   {items.length} pendiente{items.length === 1 ? '' : 's'}
+                  {notasEnCola > 0
+                    ? ` · ${notasEnCola} en cola`
+                    : ''}
                 </>
               ) : vistaPanel === 'aprobados' ? (
                 <>

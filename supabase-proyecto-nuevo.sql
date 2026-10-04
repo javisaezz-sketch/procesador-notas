@@ -52,7 +52,11 @@ CREATE TABLE IF NOT EXISTS public.articulos (
   wp_post_id INT,
   wp_post_url TEXT,
   wp_post_status VARCHAR(20) DEFAULT 'draft',
-  fecha_creacion TIMESTAMPTZ DEFAULT NOW()
+  fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
+  fecha_programada TIMESTAMPTZ,
+  fecha_evento DATE,
+  categoria_slug VARCHAR(80),
+  articulo_origen_id INT
 );
 
 CREATE INDEX IF NOT EXISTS articulos_estado_idx ON public.articulos (estado);

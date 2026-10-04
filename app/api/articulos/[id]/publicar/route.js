@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { publicarArticulo, publicarPostEnWordPress } from '@/lib/publicarArticulo';
+import { programarArticulo } from '@/lib/programarPublicacion';
 
 export async function POST(request, { params }) {
   try {
@@ -8,6 +9,7 @@ export async function POST(request, { params }) {
     const body = await request.json().catch(() => ({}));
     const categoriaSlug = body.categoriaSlug;
     const publicarEnWeb = body.publicarEnWeb === true;
+    const programarEn = body.programarEn || null;
 
     if (!articuloId || Number.isNaN(articuloId)) {
       return NextResponse.json(
@@ -21,6 +23,21 @@ export async function POST(request, { params }) {
         { ok: false, error: 'Debes seleccionar una categoría' },
         { status: 400 },
       );
+    }
+
+    if (programarEn) {
+      const programado = await programarArticulo(articuloId, {
+        cuando: programarEn,
+        categoriaSlug,
+        publicarEnWeb,
+      });
+      return NextResponse.json({
+        ok: true,
+        programado: true,
+        message: 'Publicación programada',
+        fecha_programada: programado.articulo.fecha_programada,
+        articulo: programado.articulo,
+      });
     }
 
     const resultado = await publicarArticulo(articuloId, categoriaSlug);

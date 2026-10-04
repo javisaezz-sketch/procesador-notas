@@ -13,6 +13,7 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
   const formRef = useRef(null);
   const categorias = getCategoriasMedio(articulo.medios);
   const [categoriaSlug, setCategoriaSlug] = useState(null);
+  const [cuandoLocal, setCuandoLocal] = useState('');
 
   useEffect(() => {
     setCategoriaSlug(getCategoriaDefaultMedio(articulo.medios));
@@ -38,8 +39,25 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
 
     const catElegida = categoriaSlug || 'feed';
     guardarCategoriaDefaultMedio(articulo.medios, catElegida);
-    onConfirm(catElegida, { publicarEnWeb });
+
+    let programarEn = null;
+    if (publicarEnWeb && cuandoLocal) {
+      const fecha = new Date(cuandoLocal);
+      if (Number.isNaN(fecha.getTime()) || fecha.getTime() < Date.now() + 60 * 1000) {
+        window.alert('Elige una hora al menos un minuto en el futuro.');
+        return;
+      }
+      programarEn = fecha.toISOString();
+    }
+
+    onConfirm(catElegida, { publicarEnWeb, programarEn });
   }
+
+  const minimoLocal = (() => {
+    const fecha = new Date(Date.now() + 15 * 60 * 1000);
+    const local = new Date(fecha.getTime() - fecha.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+  })();
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">
@@ -151,6 +169,20 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
             </fieldset>
           )}
 
+          <label className="block text-sm text-slate-700">
+            <span className="font-medium">Publicar más tarde</span>
+            <input
+              type="datetime-local"
+              value={cuandoLocal}
+              min={minimoLocal}
+              onChange={(event) => setCuandoLocal(event.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900"
+            />
+            <span className="mt-1 block text-xs text-slate-500">
+              Si eliges hora, el botón de publicar la deja en cola. El pipeline la envía en la siguiente pasada, cada 2 horas.
+            </span>
+          </label>
+
           <div className="flex flex-col gap-3">
             <button
               type="button"
@@ -163,8 +195,10 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
               }`}
             >
               {isPublishing
-                ? (esInstagram ? 'Publicando en Instagram...' : 'Publicando...')
-                : (esInstagram ? 'Publicar ahora en Instagram (@laglamdelbuenvivir)' : 'Publicar en la web')}
+                ? 'Guardando...'
+                : cuandoLocal
+                  ? (esInstagram ? 'Programar en Instagram' : 'Programar publicación en la web')
+                  : (esInstagram ? 'Publicar ahora en Instagram (@laglamdelbuenvivir)' : 'Publicar en la web')}
             </button>
             {!esInstagram && (
               <button

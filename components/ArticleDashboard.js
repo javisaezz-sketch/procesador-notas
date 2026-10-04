@@ -10,6 +10,7 @@ import ErrorNotaCard from './ErrorNotaCard';
 import GoogleMapsCard from './GoogleMapsCard';
 import MedioLogo, { MedioBadge } from './MedioLogo';
 import { agruparPorMedio, esMedioInstagram, getMedioTheme, ordenarMedios } from '@/lib/medios';
+import { extraerFechaEvento } from '@/lib/fechaEvento';
 
 function mensajeEmailBuzon(emailBuzon) {
   if (!emailBuzon) return '';
@@ -54,6 +55,7 @@ function ArticleCard({
   onPublish,
   onReenviarMedio,
   onCancel,
+  onCancelarPrograma,
 }) {
   const theme = getMedioTheme(articulo.medios);
 
@@ -87,6 +89,27 @@ function ArticleCard({
           <span className="font-medium text-slate-800">Creado:</span>{' '}
           {formatFecha(articulo.fecha_creacion)}
         </p>
+        {(() => {
+          const acto =
+            articulo.fecha_evento ||
+            extraerFechaEvento(
+              `${articulo.titulo_generado || ''} ${articulo.notas_prensa?.asunto || ''}`,
+            );
+          if (!acto) return null;
+          return (
+            <p>
+              <span className="font-medium text-slate-800">Acto:</span>{' '}
+              {new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(
+                new Date(`${acto}T12:00:00`),
+              )}
+            </p>
+          );
+        })()}
+        {articulo.estado === 'programado' && articulo.fecha_programada && (
+          <p className="font-medium text-amber-800">
+            Programado: {formatFecha(articulo.fecha_programada)}
+          </p>
+        )}
       </div>
 
       <div className="mt-6 flex flex-col gap-3">
@@ -124,6 +147,16 @@ function ArticleCard({
         >
           {isReenviando ? 'Encolando...' : 'Procesar en otro medio'}
         </button>
+        {articulo.estado === 'programado' && (
+          <button
+            type="button"
+            onClick={onCancelarPrograma}
+            disabled={isPublishing || isAnulando || isReenviando}
+            className="rounded-xl border border-amber-200 px-4 py-3.5 text-base font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
+          >
+            Quitar programación
+          </button>
+        )}
         <button
           type="button"
           onClick={onCancel}
@@ -485,13 +518,52 @@ export default function ArticleDashboard({
     };
   }
 
-  async function handlePublicar(articulo, categoriaSlug, { publicarEnWeb = false } = {}) {
+  async function handleCancelarPrograma(articulo) {
+    setPublishingId(articulo.id);
+    try {
+      const response = await fetch(`/api/articulos/${articulo.id}/programar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cancelar: true }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo quitar la programación');
+      }
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === articulo.id
+            ? { ...item, estado: 'pendiente_revision', fecha_programada: null }
+            : item,
+        ),
+      );
+      setFeedback({
+        type: 'info',
+        message: `"${articulo.titulo_generado}" vuelve a la cola, sin hora.`,
+      });
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message });
+    } finally {
+      setPublishingId(null);
+    }
+  }
+
+  function avisoBorradorInstagram(data) {
+    if (data?.borradorInstagram?.creado) {
+      return ' También se ha creado un borrador de Instagram en Pendientes.';
+    }
+    return '';
+  }
+
+  async function handlePublicar(articulo, categoriaSlug, { publicarEnWeb = false, programarEn = null } = {}) {
     setPublishingId(articulo.id);
     setFeedback({
       type: 'info',
-      message: publicarEnWeb
-        ? `Publicando "${articulo.titulo_generado}" en la web...`
-        : `Enviando "${articulo.titulo_generado}" como borrador a ${getMedioNombre(articulo)}...`,
+      message: programarEn
+        ? `Programando "${articulo.titulo_generado}"...`
+        : publicarEnWeb
+          ? `Publicando "${articulo.titulo_generado}" en la web...`
+          : `Enviando "${articulo.titulo_generado}" como borrador a ${getMedioNombre(articulo)}...`,
     });
 
     try {
@@ -505,7 +577,7 @@ export default function ArticleDashboard({
       const response = await fetch(`/api/articulos/${articulo.id}/publicar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categoriaSlug, publicarEnWeb }),
+        body: JSON.stringify({ categoriaSlug, publicarEnWeb, programarEn }),
       });
 
       const raw = await response.text();
@@ -519,6 +591,27 @@ export default function ArticleDashboard({
 
       if (!response.ok || !data.ok) {
         throw new Error(data.error || 'No se pudo publicar el artículo');
+      }
+
+      if (data.programado) {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === articulo.id
+              ? {
+                  ...item,
+                  estado: 'programado',
+                  fecha_programada: data.fecha_programada,
+                }
+              : item,
+          ),
+        );
+        setPublishArticle(null);
+        setFeedback({
+          type: 'success',
+          message: `"${articulo.titulo_generado}" se publicará en la siguiente pasada del pipeline.`,
+        });
+        router.refresh();
+        return;
       }
 
       setItems((prev) => prev.filter((item) => item.id !== articulo.id));
@@ -539,7 +632,7 @@ export default function ArticleDashboard({
           type: 'success',
           message: esIg
             ? `Publicado con éxito en Instagram (@laglamdelbuenvivir). Ya está visible en el feed.`
-            : `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,
+            : `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}${avisoBorradorInstagram(data)}`,
           link: data.wordpressPostUrl,
           linkLabel: esIg ? 'Ver post en Instagram' : 'Ver artículo publicado',
         });
@@ -552,7 +645,7 @@ export default function ArticleDashboard({
         setVistaPanel('aprobados');
         setFeedback({
           type: 'success',
-          message: `Borrador creado en ${data.medio} → categoría "${data.categoria}". Puedes publicarlo en la web desde la pestaña Aprobados.${data.emailNotificacion ? ` Notificará a ${data.emailNotificacion} al publicar.` : ''}${mensajeEmailBuzon(data.emailBuzon)}`,
+          message: `Borrador creado en ${data.medio} → categoría "${data.categoria}". Puedes publicarlo en la web desde la pestaña Aprobados.${data.emailNotificacion ? ` Notificará a ${data.emailNotificacion} al publicar.` : ''}${mensajeEmailBuzon(data.emailBuzon)}${avisoBorradorInstagram(data)}`,
           link: data.wordpressPostUrl,
           linkLabel: 'Ver borrador en WordPress',
         });
@@ -1013,6 +1106,7 @@ export default function ArticleDashboard({
               onPublish={() => setPublishArticle(articulo)}
               onReenviarMedio={() => setReenviarArticulo(articulo)}
               onCancel={() => handleAnular(articulo)}
+              onCancelarPrograma={() => handleCancelarPrograma(articulo)}
             />
           );
         })}

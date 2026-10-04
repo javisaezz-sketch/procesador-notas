@@ -51,6 +51,26 @@ async function main() {
   }
 
   console.log('');
+  console.log('⏱ Publicaciones programadas');
+  try {
+    const { publicarProgramados } = await import('./lib/programarPublicacion.js');
+    const programados = await publicarProgramados();
+    if (programados.publicados.length) {
+      programados.publicados.forEach((item) => {
+        console.log(`   → Publicado #${item.id}: ${item.titulo}`);
+      });
+    } else if (!programados.errores.length) {
+      console.log('   → No había publicaciones pendientes de hora.');
+    }
+    programados.errores.forEach((item) => {
+      advertencias.push({ fase: 'programados', notaId: item.id, error: item.error });
+    });
+  } catch (error) {
+    console.error(`   ❌ Error en publicaciones programadas: ${error.message}`);
+    advertencias.push({ fase: 'programados', error: error.message });
+  }
+
+  console.log('');
 
   console.log('🤖 PASO 2/2 — Generar artículos con IA');
   let articulos = [];

@@ -176,6 +176,7 @@ export default function ArticleDashboard({
   const [ciudadFiltroMaps, setCiudadFiltroMaps] = useState('todas');
   const [feedback, setFeedback] = useState(null);
   const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
+  const [refrescando, setRefrescando] = useState(false);
   const [selectedApprovedIds, setSelectedApprovedIds] = useState([]);
   const [publicandoLote, setPublicandoLote] = useState(false);
   const [revisionListaPublicar, setRevisionListaPublicar] = useState(false);
@@ -206,20 +207,16 @@ export default function ArticleDashboard({
     setErrorItems(notasConError);
   }, [notasConError]);
 
-  useEffect(() => {
-    const modalAbierto = Boolean(selectedArticle || publishArticle);
-    if (modalAbierto) return undefined;
-
-    const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
-        return;
-      }
-      router.refresh();
-      setUltimaActualizacion(new Date());
-    }, 300000);
-
-    return () => clearInterval(interval);
-  }, [router, selectedArticle, publishArticle]);
+  function handleRefrescarPanel() {
+    if (refrescando) return;
+    setRefrescando(true);
+    setUltimaActualizacion(new Date());
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('panel-refresh'));
+    }
+    router.refresh();
+    window.setTimeout(() => setRefrescando(false), 800);
+  }
 
   const listaActiva =
     vistaPanel === 'pendientes'
@@ -1111,30 +1108,54 @@ export default function ArticleDashboard({
               <span>{sincronizandoMaps ? 'Sincronizando...' : 'Sincronizar con Maps'}</span>
             </button>
           )}
-          <div className="inline-flex w-fit shrink-0 items-center rounded-full bg-indigo-50 px-5 py-2.5 text-base font-medium text-indigo-700 ring-1 ring-indigo-100 sm:px-4 sm:py-2 sm:text-sm">
-            {vistaPanel === 'pendientes' ? (
-              <>
-                {items.length} pendiente{items.length === 1 ? '' : 's'}
-              </>
-            ) : vistaPanel === 'aprobados' ? (
-              <>
-                {borradoresPendientesWeb} borrador
-                {borradoresPendientesWeb === 1 ? '' : 'es'} por publicar
-              </>
-            ) : vistaPanel === 'errores' ? (
-              <>
-                {errorItems.length} error{errorItems.length === 1 ? '' : 'es'}
-              </>
-            ) : (
-              <>
-                {gmapsItems.length} reseña{gmapsItems.length === 1 ? '' : 's'}
-              </>
-            )}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex w-fit shrink-0 items-center rounded-full bg-indigo-50 px-5 py-2.5 text-base font-medium text-indigo-700 ring-1 ring-indigo-100 sm:px-4 sm:py-2 sm:text-sm">
+              {vistaPanel === 'pendientes' ? (
+                <>
+                  {items.length} pendiente{items.length === 1 ? '' : 's'}
+                </>
+              ) : vistaPanel === 'aprobados' ? (
+                <>
+                  {borradoresPendientesWeb} borrador
+                  {borradoresPendientesWeb === 1 ? '' : 'es'} por publicar
+                </>
+              ) : vistaPanel === 'errores' ? (
+                <>
+                  {errorItems.length} error{errorItems.length === 1 ? '' : 'es'}
+                </>
+              ) : (
+                <>
+                  {gmapsItems.length} reseña{gmapsItems.length === 1 ? '' : 's'}
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleRefrescarPanel}
+              disabled={refrescando}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+              title="Actualizar el panel ahora"
+            >
+              <svg
+                className={`h-4 w-4 text-slate-500 ${refrescando ? 'animate-spin' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <span>{refrescando ? 'Actualizando...' : 'Actualizar'}</span>
+            </button>
           </div>
           <p className="text-xs text-slate-500 sm:text-right">
-            Auto-refresh cada 5 min (solo con pestaña visible)
+            Sin auto-refresh. Pulsa Actualizar cuando quieras recargar.
             {ultimaActualizacion
-              ? ` · ${ultimaActualizacion.toLocaleTimeString('es-ES', {
+              ? ` Última: ${ultimaActualizacion.toLocaleTimeString('es-ES', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}`

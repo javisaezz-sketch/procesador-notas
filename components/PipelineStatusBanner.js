@@ -77,11 +77,16 @@ export default function PipelineStatusBanner() {
     }
 
     cargar();
-    const interval = setInterval(cargar, 60000);
+
+    function onPanelRefresh() {
+      cargar();
+    }
+
+    window.addEventListener('panel-refresh', onPanelRefresh);
 
     return () => {
       activo = false;
-      clearInterval(interval);
+      window.removeEventListener('panel-refresh', onPanelRefresh);
     };
   }, []);
 

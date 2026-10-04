@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseClient } from '@/lib/supabase';
-import { generarPostInstagramDesdeReview } from '@/lib/googleMaps';
+import {
+  generarPostInstagramDesdeReview,
+  revertirPublicacionFallidaGoogleMaps,
+} from '@/lib/googleMaps';
 import { publicarArticulo } from '@/lib/publicarArticulo';
 
 export const dynamic = 'force-dynamic';
@@ -48,15 +51,20 @@ export async function POST(request, { params }) {
         '[API /api/google-maps/[id]/generar] Post generado pero no publicado:',
         publishError,
       );
-      return NextResponse.json({
-        ok: true,
-        publicado: false,
-        message:
-          'El post se generó, pero Instagram no lo publicó. Está en Pendientes para reintentar.',
-        articulo: resultado.articulo,
+      await revertirPublicacionFallidaGoogleMaps(supabase, {
+        articuloId: resultado.articulo?.id,
         notaId: resultado.notaId,
-        errorPublicacion: publishError.message,
       });
+      return NextResponse.json(
+        {
+          ok: false,
+          publicado: false,
+          error:
+            publishError.message ||
+            'Instagram no pudo publicar el post. La reseña sigue en Google Maps para reintentarlo.',
+        },
+        { status: 502 },
+      );
     }
   } catch (error) {
     console.error('[API /api/google-maps/[id]/generar] Error:', error);

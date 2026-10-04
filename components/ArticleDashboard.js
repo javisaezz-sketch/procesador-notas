@@ -739,46 +739,24 @@ export default function ArticleDashboard({
       );
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || 'No se pudo generar el post para Instagram');
+      if (!res.ok || !data.ok || !data.publicado) {
+        throw new Error(
+          data.error ||
+            data.errorPublicacion ||
+            'No se pudo publicar el post en Instagram',
+        );
       }
 
       setGmapsItems((prev) =>
         prev.filter((r) => r.review_id !== review.review_id),
       );
       setGenerandoReviewId(null);
-
-      const medioLaGlam = medios.find((m) => m.slug === 'laglam') || {
-        id: 5,
-        nombre: 'LaGlam',
-        slug: 'laglam',
-        color: 'pink',
-      };
-      const nuevoArticulo = data.articulo
-        ? {
-            ...data.articulo,
-            medios: medioLaGlam,
-            imagenes_adicionales: (review.fotos?.length || 1) - 1,
-          }
-        : null;
-
-      if (data.publicado) {
-        setFeedback({
-          type: 'success',
-          message: `Publicado en Instagram (@laglamdelbuenvivir): "${review.place_name}".`,
-          link: data.instagramUrl,
-          linkLabel: data.instagramUrl ? 'Ver post en Instagram' : undefined,
-        });
-      } else if (nuevoArticulo) {
-        setItems((prev) => [nuevoArticulo, ...prev]);
-        setVistaPanel('pendientes');
-        setPublishArticle(nuevoArticulo);
-        setFeedback({
-          type: 'error',
-          message: `El post de "${review.place_name}" se generó, pero Instagram no lo publicó: ${data.errorPublicacion || 'error desconocido'}. Reinténtalo desde Pendientes.`,
-        });
-      }
-
+      setFeedback({
+        type: 'success',
+        message: `Publicado en Instagram (@laglamdelbuenvivir): "${review.place_name}".`,
+        link: data.instagramUrl,
+        linkLabel: data.instagramUrl ? 'Ver post en Instagram' : undefined,
+      });
       router.refresh();
     } catch (err) {
       setFeedback({
@@ -1106,7 +1084,7 @@ export default function ArticleDashboard({
                 ? 'Publica en la web los borradores ya aprobados, sin entrar en WordPress.'
                 : vistaPanel === 'errores'
                   ? 'Reintenta las notas que fallaron al generarse con Gemini o descártalas.'
-                  : 'Elige una reseña y públicala directamente en el feed de @laglamdelbuenvivir. Gemini redacta el pie de foto y se envía a Instagram con la foto en alta resolución.'}
+                  : 'Elige fotos y publícalo directo en @laglamdelbuenvivir. No pasa por la cola de LaGlam: si Instagram falla, la reseña se queda aquí para reintentarlo.'}
           </p>
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">

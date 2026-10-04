@@ -14,28 +14,14 @@ Quedan fuera el catering y los alquileres de espacio, carpa, escenario, sonido, 
 
 ## Qué hay que configurar
 
-En el repositorio de GitHub: Settings → Secrets and variables → Actions.
+El correo sale hacia **javisaezz@gmail.com** desde esa misma cuenta. En GitHub, Settings → Secrets and variables → Actions, el único secret necesario es `LICITACIONES_SMTP_PASS`: la contraseña de aplicación de 16 letras, no la de entrar a Gmail.
 
-El correo sale hacia **javisaezz@gmail.com**. Para enviarlo hace falta un buzón de salida. Con el mismo Gmail:
-
-| Secret | Valor |
-|---|---|
-| `LICITACIONES_SMTP_HOST` | `smtp.gmail.com` |
-| `LICITACIONES_SMTP_PORT` | `587` |
-| `LICITACIONES_SMTP_USER` | `javisaezz@gmail.com` |
-| `LICITACIONES_SMTP_PASS` | contraseña de aplicación de Google (no la contraseña de entrar al correo) |
-| `LICITACIONES_EMAIL_FROM` | opcional. Si falta, se usa la cuenta SMTP |
-
-La contraseña de aplicación se crea en la cuenta de Google: Seguridad → Verificación en dos pasos → Contraseñas de aplicaciones.
-
-El workflow `.github/workflows/licitaciones.yml` se ejecuta cada día a las 07:00 (horario de verano) o a las 06:00 (horario de invierno). También se puede lanzar a mano en Actions → Licitaciones en plazo.
-
-La primera ejecución lee hasta 30 páginas de cada fuente (unas 500 por página: en la plataforma estatal eso cubre cerca de una semana). Las siguientes solo leen lo publicado desde la última vez y conservan la lista en la caché de Actions. Si quieres mirar más atrás la primera vez, lanza el workflow a mano y sube «Páginas por fuente». Si la caché se borra, el siguiente día vuelve a hacer el recorrido largo.
+El primer parte automático es el martes 6 de octubre de 2026 a las 7:40, hora de Madrid. A partir de ese día el correo sale cada mañana a las 7:40 con lo publicado desde las 7:40 del día anterior. Lo ya enviado no se repite.
 
 ## Probarlo en local
 
 ```bash
-node licitaciones/ejecutar.cjs --sin-envio --max-paginas-inicial 1 --atras-dias 2
+node licitaciones/ejecutar.cjs --sin-envio --modo viernes --max-paginas 1
 ```
 
 El correo queda en `licitaciones/salida/ultimo.txt` y no se envía. Para enviarlo, define las mismas variables en `.env` y quita `--sin-envio`.

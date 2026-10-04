@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Correo diario de licitaciones en plazo.
-// Uso: node licitaciones/ejecutar.cjs [--sin-envio] [--max-paginas 10] [--max-paginas-inicial 30] [--atras-dias 21]
-// El primer día recorre más páginas. Los siguientes solo leen lo nuevo desde el estado guardado.
+// Uso: node licitaciones/ejecutar.cjs [--modo viernes|programado] [--sin-envio]
 
 const fs = require('fs');
 const path = require('path');
@@ -12,24 +11,29 @@ const { evaluar } = require('./perfil.cjs');
 const { parsearEntrada } = require('./parsear.cjs');
 const { FUENTES, descargarConReintento, recorrerFeed } = require('./fuentes.cjs');
 const { construirMensaje, enviarCorreo } = require('./correo.cjs');
+const {
+  DESDE_VIERNES,
+  madridAEpoch,
+  ventanaProgramada,
+  dentroDeVentana,
+  fechaHumana,
+  puedeEnviarProgramado,
+} = require('./ventana.cjs');
 
-const DIA = 24 * 60 * 60 * 1000;
 const ESTADO_DEFECTO = path.join(__dirname, 'estado.json');
 
 function args(argv) {
   const opciones = {
     sinEnvio: false,
-    maxPaginas: 10,
-    maxPaginasInicial: 30,
-    atrasDias: 21,
+    maxPaginas: 12,
+    modo: 'viernes',
     estado: ESTADO_DEFECTO,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--sin-envio') opciones.sinEnvio = true;
     if (arg === '--max-paginas') opciones.maxPaginas = Number(argv[++i]);
-    if (arg === '--max-paginas-inicial') opciones.maxPaginasInicial = Number(argv[++i]);
-    if (arg === '--atras-dias') opciones.atrasDias = Number(argv[++i]);
+    if (arg === '--modo') opciones.modo = argv[++i];
     if (arg === '--estado') opciones.estado = argv[++i];
   }
   return opciones;
@@ -51,15 +55,6 @@ function ahoraMadrid(fecha = new Date()) {
   return `${valor('year')}-${valor('month')}-${valor('day')}T${hora}:${valor('minute')}:${valor('second')}`;
 }
 
-function fechaTexto(fecha = new Date()) {
-  return new Intl.DateTimeFormat('es-ES', {
-    timeZone: 'Europe/Madrid',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(fecha);
-}
-
 function leerEstado(ruta) {
   try {
     return JSON.parse(fs.readFileSync(ruta, 'utf8'));
@@ -77,15 +72,24 @@ function guardarEstado(ruta, estado) {
 
 async function main() {
   const opciones = args(process.argv.slice(2));
+  const ahora = ahoraMadrid();
+  if (opciones.modo === 'programado' && !puedeEnviarProgramado(ahora)) {
+    console.log(`Todavía no toca. El primer parte de las 7:40 es el martes 6 de octubre. Ahora en Madrid: ${ahora}`);
+    return;
+  }
+
   const estado = leerEstado(opciones.estado);
   estado.licitaciones ||= {};
-  const clavesPrevias = new Set(Object.keys(estado.licitaciones));
-  const primerRecorrido = !estado.watermark;
-  const desdeEpoch = primerRecorrido
-    ? Date.now() - opciones.atrasDias * DIA
-    : estado.watermark - 6 * 60 * 60 * 1000;
-  const maxPaginas = primerRecorrido ? opciones.maxPaginasInicial : opciones.maxPaginas;
-  const ahora = ahoraMadrid();
+  estado.enviadas ||= {};
+  const tramo = opciones.modo === 'viernes'
+    ? { desde: DESDE_VIERNES, hasta: ahora }
+    : ventanaProgramada(ahora, estado.ultimoHasta);
+  const inicioFeed = madridAEpoch(tramo.desde) - 6 * 60 * 60 * 1000;
+  const desdeEpoch = opciones.modo === 'viernes' || !estado.watermark
+    ? inicioFeed
+    : Math.max(inicioFeed, estado.watermark - 60 * 60 * 1000);
+  console.log(`Tramo ${tramo.desde} → ${tramo.hasta}`);
+  const maxPaginas = opciones.modo === 'viernes' ? Math.max(opciones.maxPaginas, 24) : opciones.maxPaginas;
   const hoy = ahora.slice(0, 10);
   const motivos = {};
   const vistas = new Set();
@@ -113,6 +117,7 @@ async function main() {
           const previa = estado.licitaciones[item.clave];
           estado.licitaciones[item.clave] = {
             ...decision.ficha,
+            actualizadoMadrid: item.actualizadoEpoch ? ahoraMadrid(new Date(item.actualizadoEpoch)) : '',
             vista: previa?.vista || hoy,
           };
         },
@@ -132,13 +137,16 @@ async function main() {
   estado.watermark = watermark;
   guardarEstado(opciones.estado, estado);
 
-  const licitaciones = Object.values(estado.licitaciones);
-  const nuevas = new Set(licitaciones.filter((ficha) => !clavesPrevias.has(ficha.clave)).map((ficha) => ficha.clave));
+  const periodo = `del ${fechaHumana(tramo.desde)} al ${fechaHumana(tramo.hasta)}`;
+  const licitaciones = Object.values(estado.licitaciones).filter(
+    (ficha) => dentroDeVentana(ficha, tramo.desde, tramo.hasta) && !estado.enviadas[ficha.clave],
+  );
+  const nuevas = new Set(licitaciones.map((ficha) => ficha.clave));
   const resumenMotivos = Object.entries(motivos)
     .map(([motivo, total]) => `${motivo} ${total}`)
     .join(', ');
   const mensaje = construirMensaje({
-    fechaTexto: fechaTexto(),
+    fechaTexto: periodo,
     licitaciones,
     nuevas,
     resumenFuentes: `${fuentesResumen.join(' · ')}. Descartes de este recorrido: ${resumenMotivos || 'ninguno'}.`,
@@ -153,6 +161,9 @@ async function main() {
 
   if (opciones.sinEnvio) return;
   await enviarCorreo(mensaje);
+  for (const ficha of licitaciones) estado.enviadas[ficha.clave] = tramo.hasta;
+  estado.ultimoHasta = tramo.hasta;
+  guardarEstado(opciones.estado, estado);
   console.log(`Correo enviado a ${process.env.LICITACIONES_EMAIL_TO || 'javisaezz@gmail.com'}`);
 }
 

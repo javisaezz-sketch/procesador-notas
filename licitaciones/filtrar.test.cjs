@@ -5,6 +5,7 @@ const { evaluar } = require('./perfil.cjs');
 const { parsearEntrada, listarEntradas, enlaceNext } = require('./parsear.cjs');
 const { recorrerFeed } = require('./fuentes.cjs');
 const { construirMensaje } = require('./correo.cjs');
+const { dentroDeVentana, ventanaProgramada, puedeEnviarProgramado, fechaHumana, madridAEpoch } = require('./ventana.cjs');
 
 const AHORA = '2026-10-04T12:00:00';
 
@@ -328,4 +329,26 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   assert.match(mensaje.texto, /https:\/\/ejemplo\/gala/);
   assert.match(mensaje.asunto, /3$/);
   assert.match(mensaje.html, /Nueva/);
+});
+
+test('el tramo diario va de las 7:40 a las 7:40 y el primero no deja un hueco', () => {
+  const martes = ventanaProgramada('2026-10-06T07:40:00', '2026-10-04T19:45:00');
+  assert.equal(martes.desde, '2026-10-04T19:45:00');
+  assert.equal(martes.hasta, '2026-10-06T07:40:00');
+  const miercoles = ventanaProgramada('2026-10-07T07:40:05', '2026-10-06T07:40:00');
+  assert.equal(miercoles.desde, '2026-10-06T07:40:00');
+  assert.equal(miercoles.hasta, '2026-10-07T07:40:00');
+});
+
+test('una licitación entra en el tramo por su fecha de publicación', () => {
+  const desde = '2026-10-02T00:00:00';
+  const hasta = '2026-10-04T19:45:00';
+  assert.equal(dentroDeVentana({ publicacion: '2026-10-02' }, desde, hasta), true);
+  assert.equal(dentroDeVentana({ publicacion: '2026-10-04' }, desde, hasta), true);
+  assert.equal(dentroDeVentana({ publicacion: '2026-10-01' }, desde, hasta), false);
+  assert.equal(puedeEnviarProgramado('2026-10-05T07:40:00'), false);
+  assert.equal(puedeEnviarProgramado('2026-10-06T07:40:00'), true);
+  assert.equal(puedeEnviarProgramado('2026-10-06T08:40:00'), false);
+  assert.match(fechaHumana('2026-10-02T00:00:00'), /viernes 2 de octubre, 00:00/);
+  assert.equal(new Date(madridAEpoch('2026-10-02T00:00:00')).toISOString(), '2026-10-01T22:00:00.000Z');
 });

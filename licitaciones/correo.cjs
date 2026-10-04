@@ -114,7 +114,7 @@ async function enviarCorreo({ asunto, texto, html }) {
     port: Number(process.env.LICITACIONES_SMTP_PORT || 587),
     secure: process.env.LICITACIONES_SMTP_SECURE === '1',
     requireTLS: process.env.LICITACIONES_SMTP_SECURE !== '1',
-    auth: { user, pass },
+    auth: { user, pass: String(pass).replace(/\s/g, '') },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
     socketTimeout: 20000,

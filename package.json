@@ -31,7 +31,6 @@
     "@supabase/supabase-js": "^2.49.1",
     "cheerio": "^1.0.0",
     "dotenv": "^16.4.7",
-    "imapflow": "^1.0.184",
     "mailparser": "^3.7.2",
     "next": "^15.1.0",
     "node-pop3": "^0.10.0",

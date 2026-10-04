@@ -150,6 +150,8 @@ export default function ArticleDashboard({
   const [approvedItems, setApprovedItems] = useState(articulosAprobados);
   const [errorItems, setErrorItems] = useState(notasConError);
   const [gmapsItems, setGmapsItems] = useState(googleMapsReviews);
+  const [gmapsCargadas, setGmapsCargadas] = useState(googleMapsReviews.length > 0);
+  const [cargandoGmaps, setCargandoGmaps] = useState(false);
   const [filtroMedio, setFiltroMedio] = useState('todos');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [publishArticle, setPublishArticle] = useState(null);
@@ -186,8 +188,34 @@ export default function ArticleDashboard({
   }, [articulos]);
 
   useEffect(() => {
-    setGmapsItems(googleMapsReviews);
+    if (googleMapsReviews.length > 0) {
+      setGmapsItems(googleMapsReviews);
+      setGmapsCargadas(true);
+    }
   }, [googleMapsReviews]);
+
+  async function cargarGoogleMaps(forzar = false) {
+    if (cargandoGmaps) return;
+    if (gmapsCargadas && !forzar) return;
+
+    setCargandoGmaps(true);
+    try {
+      const res = await fetch('/api/google-maps/reviews', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudieron cargar las reseñas');
+      }
+      setGmapsItems(data.reviews || []);
+      setGmapsCargadas(true);
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: `Error al cargar Google Maps: ${err.message}`,
+      });
+    } finally {
+      setCargandoGmaps(false);
+    }
+  }
 
   useEffect(() => {
     setApprovedItems(articulosAprobados);
@@ -213,6 +241,9 @@ export default function ArticleDashboard({
     setUltimaActualizacion(new Date());
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('panel-refresh'));
+    }
+    if (vistaPanel === 'gmaps') {
+      cargarGoogleMaps(true);
     }
     router.refresh();
     window.setTimeout(() => setRefrescando(false), 800);
@@ -815,6 +846,7 @@ export default function ArticleDashboard({
       }
 
       setGmapsItems(data.reviews || []);
+      setGmapsCargadas(true);
       setFeedback({
         type: 'success',
         message:
@@ -1046,6 +1078,7 @@ export default function ArticleDashboard({
           onClick={() => {
             setVistaPanel('gmaps');
             setFiltroMedio('todos');
+            cargarGoogleMaps();
           }}
           className={`inline-flex items-center gap-2 shrink-0 rounded-full px-5 py-3 text-sm font-semibold transition sm:py-2.5 ${
             vistaPanel === 'gmaps'
@@ -1056,7 +1089,10 @@ export default function ArticleDashboard({
           <svg className="h-4 w-4 text-red-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
           </svg>
-          <span>Google Maps ({gmapsItems.length})</span>
+          <span>
+            Google Maps
+            {gmapsCargadas ? ` (${gmapsItems.length})` : ''}
+          </span>
         </button>
       </div>
 
@@ -1257,7 +1293,12 @@ export default function ArticleDashboard({
       )}
 
       {vistaPanel === 'gmaps' ? (
-        gmapsItems.length === 0 ? (
+        cargandoGmaps && !gmapsCargadas ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+            <p className="text-lg font-semibold text-slate-900">Cargando reseñas de Google Maps...</p>
+            <p className="mt-2 text-sm text-slate-500">Solo se consulta al abrir esta pestaña, para no gastar egress.</p>
+          </div>
+        ) : gmapsItems.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-pink-50 text-pink-600 mb-3">
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">

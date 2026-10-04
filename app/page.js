@@ -4,7 +4,6 @@ import PipelineStatusBanner from '../components/PipelineStatusBanner';
 import {
   getArticulosAprobados,
   getArticulosPendientes,
-  getGoogleMapsReviews,
   getMediosPanel,
   getNotasConError,
 } from '../lib/supabase';
@@ -16,16 +15,14 @@ export default async function DashboardPage() {
   let articulosAprobados = [];
   let notasConError = [];
   let medios = [];
-  let googleMapsReviews = [];
   let error = null;
 
   try {
-    [articulos, articulosAprobados, notasConError, medios, googleMapsReviews] = await Promise.all([
+    [articulos, articulosAprobados, notasConError, medios] = await Promise.all([
       getArticulosPendientes(),
       getArticulosAprobados(),
       getNotasConError(),
       getMediosPanel(),
-      getGoogleMapsReviews(),
     ]);
   } catch (err) {
     error = err.message;
@@ -73,7 +70,6 @@ export default async function DashboardPage() {
             articulosAprobados={articulosAprobados}
             notasConError={notasConError}
             medios={medios}
-            googleMapsReviews={googleMapsReviews}
           />
         )}
       </div>

@@ -347,7 +347,7 @@ export default function ArticleDashboard({
         router.refresh();
       }
 
-      const message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.${avisos ? ' Hay avisos: mira la franja de arriba.' : ''}${quedan ? ' Quedan notas en la cola: no se han perdido. Vuelve a pulsar Poner en marcha.' : ''}`;
+      const message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.${avisos ? ' Hay avisos: ábrelos en Errores IA.' : ''}${quedan ? ' Quedan notas en la cola: no se han perdido. Vuelve a pulsar Poner en marcha.' : ''}`;
       setFeedback({ type: 'success', message });
       setUltimaActualizacion(new Date());
       if (typeof window !== 'undefined') {

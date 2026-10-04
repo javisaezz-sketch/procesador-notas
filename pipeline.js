@@ -18,7 +18,7 @@ function guardarResumen(resumen) {
 
 async function main() {
   const { ejecutarPipeline } = await import('./lib/ejecutarPipeline.js');
-  const resumen = await ejecutarPipeline();
+  const resumen = await ejecutarPipeline({ vaciarCola: true });
   guardarResumen(resumen);
 
   if (!resumen.ok) {

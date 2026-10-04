@@ -289,37 +289,60 @@ export default function ArticleDashboard({
     setPipelineEnMarcha(true);
     setFeedback({
       type: 'info',
-      message: 'Pipeline en marcha: lee el correo, publica lo programado y genera las notas pendientes.',
+      message: 'Pipeline en marcha: lee el correo y genera las notas de cuatro en cuatro.',
     });
 
     try {
-      const response = await fetch('/api/pipeline/ejecutar', { method: 'POST' });
-      const raw = await response.text();
-      let data = {};
+      let pasada = 0;
+      let generados = 0;
+      let nuevas = 0;
+      let quedan = true;
+      let avisos = 0;
+      const maxPasadas = 4;
 
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = { error: raw };
-      }
-
-      if (response.status === 409) {
-        setFeedback({
-          type: 'info',
-          message: data.error || 'El pipeline ya está en marcha.',
-        });
-        return;
-      }
-
-      if (!response.ok || !data.ok) {
-        const bruto = `${data.error || ''} ${data.message || ''} ${raw || ''}`;
-        if (/tiempo|timeout|504|FUNCTION_INVOCATION|An error occurred/i.test(bruto)) {
-          throw new Error('timeout');
+      while (quedan && pasada < maxPasadas) {
+        pasada += 1;
+        if (pasada > 1) {
+          setFeedback({
+            type: 'info',
+            message: `Van ${generados} artículos. Sigo con las notas que quedan.`,
+          });
         }
-        throw new Error(data.error || data.message || 'No se pudo poner en marcha el pipeline');
+
+        const response = await fetch('/api/pipeline/ejecutar', { method: 'POST' });
+        const raw = await response.text();
+        let data = {};
+
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = { error: raw };
+        }
+
+        if (response.status === 409) {
+          setFeedback({
+            type: 'info',
+            message: data.error || 'El pipeline ya está en marcha.',
+          });
+          return;
+        }
+
+        if (!response.ok || !data.ok) {
+          const bruto = `${data.error || ''} ${data.message || ''} ${raw || ''}`;
+          if (/tiempo|timeout|504|FUNCTION_INVOCATION|An error occurred/i.test(bruto)) {
+            throw new Error('timeout');
+          }
+          throw new Error(data.error || data.message || 'No se pudo poner en marcha el pipeline');
+        }
+
+        generados += data.resumen?.articulosGenerados ?? 0;
+        nuevas += data.resumen?.emailsNuevas ?? 0;
+        avisos += data.resumen?.advertencias ?? 0;
+        quedan = Boolean(data.resumen?.quedanNotas);
       }
 
-      setFeedback({ type: 'success', message: data.message });
+      const message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.${avisos ? ' Hay avisos: mira la franja de arriba.' : ''}${quedan ? ' Quedan notas: vuelve a pulsarlo.' : ''}`;
+      setFeedback({ type: 'success', message });
       setUltimaActualizacion(new Date());
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('panel-refresh'));

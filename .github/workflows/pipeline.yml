@@ -56,7 +56,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
           DASHBOARD_URL: https://panel-editorial.vercel.app
-          MAX_NOTAS_POR_RUN: '1'
+          MAX_NOTAS_POR_RUN: '4'
 
       - name: Resumen del pipeline
         if: always()

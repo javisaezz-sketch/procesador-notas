@@ -2,13 +2,11 @@ import { NextResponse } from 'next/server';
 import { ejecutarPipeline } from '@/lib/ejecutarPipeline';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 120;
-
-const MAX_NOTAS_DESDE_PANEL = 2;
+export const maxDuration = 300;
 
 export async function POST() {
   try {
-    const resumen = await ejecutarPipeline({ maxNotas: MAX_NOTAS_DESDE_PANEL });
+    const resumen = await ejecutarPipeline();
 
     if (resumen.ocupado) {
       return NextResponse.json(
@@ -26,7 +24,7 @@ export async function POST() {
     let message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.`;
 
     if (resumen.quedanNotas) {
-      message += ' Quedan notas en la cola: vuelve a pulsarlo.';
+      message += ' Sigo con las que quedan.';
     }
 
     if (!resumen.ok) {

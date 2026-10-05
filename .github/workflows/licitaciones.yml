@@ -9,10 +9,11 @@ on:
   workflow_dispatch:
     inputs:
       modo:
-        description: viernes (desde el viernes 2) o diario (de 7:40 a 7:40)
-        default: viernes
+        description: prueba (desde el viernes, filtros nuevos), viernes o diario
+        default: prueba
         type: choice
         options:
+          - prueba
           - viernes
           - diario
 

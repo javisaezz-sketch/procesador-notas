@@ -149,7 +149,7 @@ test('no confunde el protocolo informático ni el Congreso de los Diputados con 
       texto: 'Sistema de transferencia de ficheros basado en el protocolo Edifact',
       cpvs: ['72260000'],
     }), AHORA).motivo,
-    'tema',
+    'importe',
   );
   assert.equal(
     evaluar(base({
@@ -218,6 +218,37 @@ test('el filtro TIC pide 30.000 y palabras de datos, pliegos o consultoría', ()
   assert.equal(
     evaluar(base({ importe: 40000, titulo: 'Consultoría jurídica', texto: 'Servicio de consultoría jurídica del contrato' }), AHORA).motivo,
     'tema',
+  );
+  assert.equal(
+    evaluar(base({
+      importe: 48000,
+      cpvs: ['72200000'],
+      titulo: 'Proyecto de sistemas de información',
+      texto: 'Servicio de proyecto de sistemas de información',
+    }), AHORA).ficha.area,
+    'tic',
+  );
+  assert.equal(
+    evaluar(base({
+      importe: 80000,
+      cpvs: ['72260000'],
+      titulo: 'Mantenimiento de aplicaciones',
+      texto: 'Servicio de mantenimiento de aplicaciones',
+    }), AHORA).ficha.area,
+    'tic',
+  );
+  assert.equal(
+    evaluar(base({
+      importe: 20000,
+      cpvs: ['72260000'],
+      titulo: 'Mantenimiento de aplicaciones',
+      texto: 'Servicio de mantenimiento de aplicaciones',
+    }), AHORA).motivo,
+    'importe',
+  );
+  assert.equal(
+    evaluar(base({ importe: 8000, cpvs: [], titulo: 'Asesoramiento a pymes del polígono', texto: 'Asesoramiento a pymes del polígono' }), AHORA).ficha.area,
+    'empresa',
   );
   assert.equal(
     evaluar(base({ importe: 40000, titulo: 'Protección de datos personales', texto: 'Delegado de protección de datos personales' }), AHORA).motivo,

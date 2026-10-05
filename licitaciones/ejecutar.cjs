@@ -81,17 +81,18 @@ async function main() {
   const estado = leerEstado(opciones.estado);
   estado.licitaciones ||= {};
   estado.enviadas ||= {};
-  const tramo = opciones.modo === 'viernes'
+  const repaso = opciones.modo === 'viernes' || opciones.modo === 'prueba';
+  const tramo = repaso
     ? { desde: DESDE_VIERNES, hasta: ahora }
     : estado.ultimoHasta
       ? ventanaProgramada(ahora, estado.ultimoHasta)
       : { desde: DESDE_VIERNES, hasta: ventanaProgramada(ahora, null).hasta };
   const inicioFeed = madridAEpoch(tramo.desde) - 6 * 60 * 60 * 1000;
-  const desdeEpoch = opciones.modo === 'viernes' || !estado.watermark
+  const desdeEpoch = repaso || !estado.watermark
     ? inicioFeed
     : Math.max(inicioFeed, estado.watermark - 60 * 60 * 1000);
   console.log(`Tramo ${tramo.desde} → ${tramo.hasta}`);
-  const maxPaginas = opciones.modo === 'viernes' ? Math.max(opciones.maxPaginas, 24) : opciones.maxPaginas;
+  const maxPaginas = repaso ? Math.max(opciones.maxPaginas, 30) : opciones.maxPaginas;
   const hoy = ahora.slice(0, 10);
   const motivos = {};
   const vistas = new Set();
@@ -141,7 +142,7 @@ async function main() {
 
   const periodo = `del ${fechaHumana(tramo.desde)} al ${fechaHumana(tramo.hasta)}`;
   const licitaciones = Object.values(estado.licitaciones).filter(
-    (ficha) => dentroDeVentana(ficha, tramo.desde, tramo.hasta) && !estado.enviadas[ficha.clave],
+    (ficha) => dentroDeVentana(ficha, tramo.desde, tramo.hasta) && (opciones.modo === 'prueba' || !estado.enviadas[ficha.clave]),
   );
   const nuevas = new Set(licitaciones.map((ficha) => ficha.clave));
   const resumenMotivos = Object.entries(motivos)

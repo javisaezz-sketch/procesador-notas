@@ -290,7 +290,7 @@ export default function ArticleDashboard({
     setPipelineEnMarcha(true);
     setFeedback({
       type: 'info',
-      message: 'Pipeline en marcha: lee el correo y genera las notas de cuatro en cuatro.',
+      message: 'Pipeline en marcha: lee todo el correo y genera todas las notas que haya.',
     });
 
     try {

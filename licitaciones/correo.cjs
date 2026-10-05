@@ -4,17 +4,17 @@ const SECCIONES = [
   {
     id: 'comunicacion',
     etiqueta: 'Comunicación y eventos',
-    detalle: 'Galas, actos y presentaciones. Menos de 10.000 € con Alejandro; desde 10.000 € con Aube.',
+    detalle: 'Galas, actos y presentaciones. Desde 7.000 €.',
   },
   {
     id: 'tic',
     etiqueta: 'TIC, datos, PMO y videovigilancia',
-    detalle: 'Datos, PMO, pliegos, consultoría y videovigilancia con plataforma. Con Aube. Desde 30.000 €.',
+    detalle: 'Datos, PMO, pliegos, consultoría y videovigilancia con plataforma. Desde 30.000 €.',
   },
   {
     id: 'empresa',
     etiqueta: 'Mentoría, pymes y formación',
-    detalle: 'Las mentorías empresariales, con Alejandro. El resto de esta área, con Aube. Desde 7.000 €.',
+    detalle: 'Mentoría, pymes, dinamización y formación empresarial. Desde 7.000 €.',
   },
 ];
 
@@ -69,13 +69,13 @@ function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) 
   const asunto = `Licitaciones en plazo · ${fechaTexto} · ${licitaciones.length}`;
   const lineas = [
     `Licitaciones en plazo — ${fechaTexto}`,
-    `${licitaciones.length} abiertas · Catalunya, Madrid y Aragón · las tres áreas en cada correo`,
+    `${licitaciones.length} abiertas · Catalunya, Madrid, Aragón, Comunitat Valenciana y Baleares`,
     '',
   ];
   const html = [
     '<div style="font-family:Georgia,serif;color:#1a1a1a;max-width:680px">',
     `<h1 style="font-size:22px;font-weight:normal">Licitaciones en plazo — ${escapar(fechaTexto)}</h1>`,
-    `<p>${licitaciones.length} abiertas · Catalunya, Madrid y Aragón · las tres áreas en cada correo</p>`,
+    `<p>${licitaciones.length} abiertas · Catalunya, Madrid, Aragón, Comunitat Valenciana y Baleares</p>`,
   ];
 
   for (const seccion of SECCIONES) {
@@ -95,11 +95,11 @@ function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) 
       const nueva = nuevas?.has(ficha.clave) ? ' · Nueva' : '';
       const tambien = ficha.tambien?.length ? ` · También: ${ficha.tambien.map((item) => item.etiqueta).join(', ')}` : '';
       const encaje = ficha.encaje || encajar(ficha);
-      const colorEncaje = encaje.vehiculo === 'alejandro' ? '#0b6e4f' : '#1a4f8b';
+      const colorEncaje = encaje.nivel === 'alto' ? '#0b6e4f' : encaje.nivel === 'medio' ? '#8a5a00' : '#666';
       lineas.push(
         `${ficha.titulo}${nueva}`,
         ficha.organo || '',
-        `${encaje.marca} · ${encaje.motivo}`,
+        `Encaje ${encaje.marca} · ${encaje.motivo}`,
         `${euros(ficha.importe)}    Publicación ${fechaCorta(ficha.publicacion)}    Tope ${fechaTope(ficha.tope)}${tambien}`,
         ficha.enlace || '',
         '',
@@ -108,7 +108,7 @@ function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) 
         '<div style="border-top:1px solid #ddd;padding:12px 0">',
         `<div style="font-size:16px">${escapar(ficha.titulo)}${nueva ? ' <span style="color:#0b6e4f">Nueva</span>' : ''}</div>`,
         `<div style="color:#444;margin-top:4px">${escapar(ficha.organo || '')}</div>`,
-        `<div style="margin-top:6px;color:${colorEncaje}"><strong>${escapar(encaje.marca)}</strong> · ${escapar(encaje.motivo)}</div>`,
+        `<div style="margin-top:6px;color:${colorEncaje}"><strong>Encaje ${escapar(encaje.marca)}</strong> · ${escapar(encaje.motivo)}</div>`,
         `<div style="margin-top:6px"><strong>${escapar(euros(ficha.importe))}</strong>`,
         ` · Publicación ${escapar(fechaCorta(ficha.publicacion))}`,
         ` · Tope ${escapar(fechaTope(ficha.tope))}`,

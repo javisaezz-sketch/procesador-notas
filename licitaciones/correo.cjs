@@ -4,17 +4,17 @@ const SECCIONES = [
   {
     id: 'comunicacion',
     etiqueta: 'Comunicación y eventos',
-    detalle: 'Galas, actos, campañas y producción conceptual. Desde 7.000 €.',
+    detalle: 'Galas, actos y presentaciones. Menos de 10.000 € con Alejandro; desde 10.000 € con Aube.',
   },
   {
     id: 'tic',
     etiqueta: 'TIC, datos, PMO y videovigilancia',
-    detalle: 'Servicios informáticos, datos, PMO, pliegos, consultoría y videovigilancia con plataforma. Desde 30.000 €.',
+    detalle: 'Datos, PMO, pliegos, consultoría y videovigilancia con plataforma. Con Aube. Desde 30.000 €.',
   },
   {
     id: 'empresa',
     etiqueta: 'Mentoría, pymes y formación',
-    detalle: 'Mentoría, coaching, pymes, dinamización comercial y formación empresarial. Desde 7.000 €.',
+    detalle: 'Las mentorías empresariales, con Alejandro. El resto de esta área, con Aube. Desde 7.000 €.',
   },
 ];
 
@@ -95,7 +95,7 @@ function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) 
       const nueva = nuevas?.has(ficha.clave) ? ' · Nueva' : '';
       const tambien = ficha.tambien?.length ? ` · También: ${ficha.tambien.map((item) => item.etiqueta).join(', ')}` : '';
       const encaje = ficha.encaje || encajar(ficha);
-      const colorEncaje = encaje.vehiculo === 'revisar' ? '#8a5a00' : '#0b6e4f';
+      const colorEncaje = encaje.vehiculo === 'alejandro' ? '#0b6e4f' : '#1a4f8b';
       lineas.push(
         `${ficha.titulo}${nueva}`,
         ficha.organo || '',

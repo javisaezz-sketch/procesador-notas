@@ -178,6 +178,15 @@ test('un congreso entra si el CPV es de eventos; la atención al pasajero no', (
     }), AHORA).motivo,
     'tema',
   );
+  assert.equal(
+    evaluar(base({
+      titulo: 'Distribución de comunicados de prensa',
+      texto: 'Servicio de distribución internacional de comunicados de prensa',
+      cpvs: ['92400000'],
+      importe: 210000,
+    }), AHORA).ficha.area,
+    'comunicacion',
+  );
 });
 
 test('separa mentoría y dinamización comercial', () => {
@@ -406,6 +415,10 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   const congreso = mensaje.texto.indexOf('Congreso de comercio');
   const gala = mensaje.texto.indexOf('Gala de Navidad');
   assert.ok(comunicacion < tic);
+  assert.ok(tic < mensaje.texto.indexOf('Mentoría, pymes y formación'));
+  assert.match(mensaje.texto, /Ninguna en este tramo/);
+  assert.match(mensaje.texto, /Galas, actos, campañas/);
+  assert.match(mensaje.texto, /Mentoría, coaching, pymes/);
   assert.ok(congreso < gala);
   assert.match(mensaje.texto, /9\.000\s*€/);
   assert.match(mensaje.texto, /Publicación 02\/10\/2026/);

@@ -18,11 +18,13 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
   const [avisarAgencia, setAvisarAgencia] = useState(
     Boolean(articulo.email_notificacion) && !articulo.sin_notificacion,
   );
+  const [etiquetas, setEtiquetas] = useState('');
 
   useEffect(() => {
     setCategoriaSlug(getCategoriaDefaultMedio(articulo.medios));
     setEmailAviso(articulo.email_notificacion || '');
     setAvisarAgencia(Boolean(articulo.email_notificacion) && !articulo.sin_notificacion);
+    setEtiquetas('');
   }, [articulo.id, articulo.medios, articulo.email_notificacion, articulo.sin_notificacion]);
   const esInstagram = esMedioInstagram(articulo.medios);
   const totalPublicar = Array.isArray(articulo.imagenes_publicar_urls)
@@ -69,6 +71,7 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
         ? {
             notificar,
             emailNotificacion: notificar ? emailAviso.trim() : null,
+            etiquetasInstagram: etiquetas.trim(),
           }
         : {}),
     });
@@ -164,6 +167,24 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
               </p>
             )}
           </>
+        )}
+
+        {esInstagram && (
+          <label className="mt-4 block">
+            <span className="block text-sm font-semibold text-slate-800">
+              Etiquetar en la foto
+            </span>
+            <input
+              type="text"
+              value={etiquetas}
+              onChange={(event) => setEtiquetas(event.target.value)}
+              placeholder="@cuenta o varias, separadas por comas"
+              className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
+            />
+            <span className="mt-1 block text-xs text-slate-500">
+              Al publicar se etiquetan en la primera foto. Si son varias, sepáralas con comas.
+            </span>
+          </label>
         )}
 
         {esInstagram && !articulo.sin_notificacion && (

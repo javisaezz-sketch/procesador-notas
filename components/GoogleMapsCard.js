@@ -15,6 +15,7 @@ export default function GoogleMapsCard({
   const [expandirTexto, setExpandirTexto] = useState(false);
   const [mostrarInstrucciones, setMostrarInstrucciones] = useState(false);
   const [instrucciones, setInstrucciones] = useState('');
+  const [etiquetas, setEtiquetas] = useState('');
 
   function ponerDePortada(url) {
     setFotoSeleccionada(url);
@@ -245,6 +246,17 @@ export default function GoogleMapsCard({
           )}
         </div>
 
+        <label className="mt-3 block">
+          <span className="text-xs font-medium text-slate-600">Etiquetar en Instagram</span>
+          <input
+            type="text"
+            value={etiquetas}
+            onChange={(event) => setEtiquetas(event.target.value)}
+            placeholder="@cuenta o varias, separadas por comas"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-800 focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+          />
+        </label>
+
         {/* 3. Botones de acción */}
         <div className="mt-5 flex items-center gap-2 pt-4 border-t border-slate-100">
           <button
@@ -263,6 +275,7 @@ export default function GoogleMapsCard({
                 fotoSeleccionadaUrl: portada,
                 fotosSeleccionadas: ordenadas,
                 instruccionesEditor: instrucciones.trim(),
+                etiquetasInstagram: etiquetas.trim(),
               });
             }}
             className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-pink-700 hover:to-rose-700 disabled:opacity-50"

@@ -653,7 +653,7 @@ export default function ArticleDashboard({
   async function handlePublicar(
     articulo,
     categoriaSlug,
-    { publicarEnWeb = false, programarEn = null, notificar = null, emailNotificacion = null } = {},
+    { publicarEnWeb = false, programarEn = null, notificar = null, emailNotificacion = null, etiquetasInstagram = '' } = {},
   ) {
     setPublishingId(articulo.id);
     setFeedback({
@@ -682,6 +682,7 @@ export default function ArticleDashboard({
           programarEn,
           notificar,
           emailNotificacion,
+          etiquetasInstagram,
         }),
       });
 
@@ -960,6 +961,7 @@ export default function ArticleDashboard({
     fotoSeleccionadaUrl,
     fotosSeleccionadas,
     instruccionesEditor,
+    etiquetasInstagram,
   }) {
     setGenerandoReviewId(review.review_id);
     setFeedback(null);
@@ -975,6 +977,7 @@ export default function ArticleDashboard({
             fotoSeleccionadaUrl,
             fotosSeleccionadas,
             instruccionesEditor,
+            etiquetasInstagram,
           }),
         },
       );
@@ -994,7 +997,7 @@ export default function ArticleDashboard({
       setGenerandoReviewId(null);
       setFeedback({
         type: 'success',
-        message: `Publicado en Instagram (@laglamdelbuenvivir): "${review.place_name}".`,
+        message: data.message || `Publicado en Instagram (@laglamdelbuenvivir): "${review.place_name}".`,
         link: data.instagramUrl,
         linkLabel: data.instagramUrl ? 'Ver post en Instagram' : undefined,
       });

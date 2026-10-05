@@ -1,4 +1,22 @@
-const ORDEN = ['comunicacion', 'tic', 'empresa'];
+const SECCIONES = [
+  {
+    id: 'comunicacion',
+    etiqueta: 'Comunicación y eventos',
+    detalle: 'Galas, actos, campañas y producción conceptual. Desde 7.000 €.',
+  },
+  {
+    id: 'tic',
+    etiqueta: 'TIC, datos, PMO y videovigilancia',
+    detalle: 'Servicios informáticos, datos, PMO, pliegos, consultoría y videovigilancia con plataforma. Desde 30.000 €.',
+  },
+  {
+    id: 'empresa',
+    etiqueta: 'Mentoría, pymes y formación',
+    detalle: 'Mentoría, coaching, pymes, dinamización comercial y formación empresarial. Desde 7.000 €.',
+  },
+];
+
+const ORDEN = SECCIONES.map((seccion) => seccion.id);
 
 function fechaCorta(iso) {
   if (!iso) return '—';
@@ -26,34 +44,45 @@ function ordenar(lista) {
   });
 }
 
-function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) {
-  const grupos = new Map();
+function porSeccion(licitaciones) {
+  const grupos = new Map(SECCIONES.map((seccion) => [seccion.id, []]));
   for (const ficha of ordenar(licitaciones)) {
-    if (!grupos.has(ficha.area)) grupos.set(ficha.area, []);
-    grupos.get(ficha.area).push(ficha);
+    if (grupos.has(ficha.area)) grupos.get(ficha.area).push(ficha);
+    for (const otra of ficha.tambien || []) {
+      if (otra.id && otra.id !== ficha.area && grupos.has(otra.id)) grupos.get(otra.id).push(ficha);
+    }
   }
+  return grupos;
+}
+
+function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) {
+  const grupos = porSeccion(licitaciones);
 
   const asunto = `Licitaciones en plazo · ${fechaTexto} · ${licitaciones.length}`;
   const lineas = [
     `Licitaciones en plazo — ${fechaTexto}`,
-    `${licitaciones.length} abiertas · Catalunya, Madrid y Aragón · TIC desde 30.000 € · resto desde 7.000 €`,
+    `${licitaciones.length} abiertas · Catalunya, Madrid y Aragón · las tres áreas en cada correo`,
     '',
   ];
   const html = [
     '<div style="font-family:Georgia,serif;color:#1a1a1a;max-width:680px">',
     `<h1 style="font-size:22px;font-weight:normal">Licitaciones en plazo — ${escapar(fechaTexto)}</h1>`,
-    `<p>${licitaciones.length} abiertas · Catalunya, Madrid y Aragón · TIC desde 30.000 € · resto desde 7.000 €</p>`,
+    `<p>${licitaciones.length} abiertas · Catalunya, Madrid y Aragón · las tres áreas en cada correo</p>`,
   ];
 
-  if (!licitaciones.length) {
-    lineas.push('Hoy no hay ninguna licitación en plazo con este perfil.');
-    html.push('<p>Hoy no hay ninguna licitación en plazo con este perfil.</p>');
-  }
-
-  for (const [area, fichas] of grupos) {
-    const titulo = fichas[0].etiqueta;
-    lineas.push(`${titulo} (${fichas.length})`, '');
-    html.push(`<h2 style="font-size:16px;margin:28px 0 8px">${escapar(titulo)} (${fichas.length})</h2>`);
+  for (const seccion of SECCIONES) {
+    const fichas = grupos.get(seccion.id);
+    const titulo = seccion.etiqueta;
+    lineas.push(`${titulo} (${fichas.length})`, seccion.detalle, '');
+    html.push(
+      `<h2 style="font-size:16px;margin:28px 0 8px">${escapar(titulo)} (${fichas.length})</h2>`,
+      `<p style="color:#444;margin:0 0 8px">${escapar(seccion.detalle)}</p>`,
+    );
+    if (!fichas.length) {
+      lineas.push('Ninguna en este tramo.', '');
+      html.push('<p>Ninguna en este tramo.</p>');
+      continue;
+    }
     for (const ficha of fichas) {
       const nueva = nuevas?.has(ficha.clave) ? ' · Nueva' : '';
       const tambien = ficha.tambien?.length ? ` · También: ${ficha.tambien.map((item) => item.etiqueta).join(', ')}` : '';

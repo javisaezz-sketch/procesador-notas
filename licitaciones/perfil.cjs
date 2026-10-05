@@ -7,6 +7,7 @@ const AREAS = [
   {
     id: 'comunicacion',
     etiqueta: 'Comunicación y eventos',
+    minimo: 7000,
     cpv: ['79950', '79951', '79952', '79416', '7934', '92111', '92112'],
     palabras: [
       'gala',
@@ -44,57 +45,60 @@ const AREAS = [
   },
   {
     id: 'tic',
-    etiqueta: 'TIC, datos y PMO',
-    cpv: ['7232', '72224'],
+    etiqueta: 'TIC, datos, PMO y videovigilancia',
+    minimo: 30000,
+    cpv: [],
     palabras: [
-      'oficina del dato',
-      'oficinas del dato',
-      'oficina de datos',
-      'gobierno del dato',
-      'gobierno de datos',
-      'base de datos',
-      'bases de datos',
-      'plataforma de datos',
       'pmo',
       'oficina de proyectos',
       'oficina de proyecto',
+      'oficina de gestion de proyectos',
+      'oficina del dato',
+      'oficinas del dato',
+      'oficina de datos',
+      'oficina de la dada',
+      'gobierno del dato',
+      'gobierno de datos',
+      'gobernanza del dato',
+      'gobernanza de datos',
+      'governanza del dato',
+      'governanza de datos',
+      'govern de la dada',
+      'governanca de les dades',
+      'catalogo de datos',
+      'catalogos de datos',
+      'cataleg de dades',
+      'plataforma de datos',
+      'espacio de datos',
+      'proyecto de datos',
+      'proyectos de datos',
+      'gestion de datos',
+      'estrategia de datos',
+      'calidad del dato',
+      'base de datos',
+      'bases de datos',
     ],
   },
   {
-    id: 'mentoria',
-    etiqueta: 'Mentoría',
-    cpv: [],
-    palabras: ['mentoria', 'mentorias', 'mentor', 'tutorizacion', 'programa de mentores'],
-  },
-  {
-    id: 'dinamizacion',
-    etiqueta: 'Dinamización comercial',
+    id: 'empresa',
+    etiqueta: 'Mentoría, pymes y formación',
+    minimo: 7000,
     cpv: [],
     palabras: [
+      'mentoria',
+      'mentorias',
+      'coaching',
       'dinamizacion comercial',
       'dinamizacion del comercio',
       'dinamizacion de comercio',
-      'dinamizacion economica',
-      'promocion comercial',
-      'promocion del comercio',
-      'promocion economica',
-      'comercio local',
-      'comercio de proximidad',
-      'asociacion de comerciantes',
-      'asociaciones de comerciantes',
-      'asociaciones empresariales',
-      'desarrollo comercial',
+      'dinamitzacio comercial',
+      'formacion empresarial',
+      'formacio empresarial',
     ],
-  },
-  {
-    id: 'videovigilancia',
-    etiqueta: 'Videovigilancia',
-    cpv: [],
-    palabras: [],
   },
 ];
 
-const PRIORIDAD = ['videovigilancia', 'comunicacion', 'tic', 'mentoria', 'dinamizacion'];
+const PRIORIDAD = ['tic', 'empresa', 'comunicacion'];
 
 const ALQUILER_GRANDE = [
   'local',
@@ -215,29 +219,51 @@ function textoDeOferta(texto) {
     .replace(/\bprotocolo de transferencia\b/g, ' ');
 }
 
+function hablaDeTic(texto) {
+  return /\b(tic|tecnolog\w*|informati\w*|software|digital\w*|ciber\w*)\b/.test(texto);
+}
+
+function puntosExtra(areaId, texto) {
+  if (areaId === 'comunicacion' && /\borganizacion\b/.test(texto) && /\b(evento|eventos|congreso|gala|feria|salon|jornada|jornadas|acto|actos)\b/.test(texto)) {
+    return 2;
+  }
+  if (areaId !== 'tic' && areaId !== 'empresa') return 0;
+  const limpio = texto.replace(/\bdatos personales\b/g, ' ').replace(/\bproteccion de datos\b/g, ' ');
+  if (areaId === 'tic') {
+    let extra = 0;
+    if (/\boficina tecnica\b/.test(limpio) && hablaDeTic(limpio)) extra += 2;
+    if (/\b(pliego|pliegos|plec|plecs)\b/.test(limpio) && /\b(redaccion|redactar|soporte|asistencia|elaboracion)\b/.test(limpio) && hablaDeTic(limpio)) extra += 2;
+    if (/\bconsultoria\b/.test(limpio) && hablaDeTic(limpio)) extra += 2;
+    if (/\basistencia tecnica\b/.test(limpio) && hablaDeTic(limpio)) extra += 2;
+    const video = /\b(videovigilancia|cctv|circuito cerrado)\b/.test(limpio);
+    const plataforma = /\b(plataforma|software|nube|cloud|vsaas|vsas|centro de control|analitica|explotacion)\b/.test(limpio);
+    if (video && plataforma) extra += 5;
+    return extra;
+  }
+  const curso = /\b(curso|cursos|formacion|formacio)\b/.test(limpio);
+  const paraEntidades = /\b(entidad|entidades|asociacion|asociaciones|empresa|empresas|pymes|pyme|pimes|pime)\b/.test(limpio);
+  const empresarial = /\b(empresarial|emprend\w*|negocio|directiv\w*|comercial|pymes|pyme|pimes)\b/.test(limpio);
+  if (curso && (hablaDeTic(limpio) || empresarial) && (paraEntidades || empresarial || hablaDeTic(limpio))) return 2;
+  if (/\b(pymes|pyme|pimes|pime)\b/.test(limpio) && /\b(mentoria|coaching|formacion|formacio|curso|cursos|dinamizacion|dinamitzacio|asesoramiento|acompana\w*)\b/.test(limpio)) return 2;
+  return 0;
+}
+
 function clasificar(item) {
   const texto = textoDeOferta(item.texto);
   const cpvs = item.cpvs || [];
   const puntos = new Map();
 
-  const video = /\b(videovigilancia|cctv|circuito cerrado)\b/.test(texto);
-  const plataforma = /\b(plataforma|software|nube|cloud|vsaas|vsas|centro de control|analitica|explotacion|inteligencia artificial)\b/.test(
-    texto,
-  );
-  if (video && plataforma) puntos.set('videovigilancia', 5);
-
   for (const area of AREAS) {
-    if (area.id === 'videovigilancia') continue;
+    const textoArea = area.id === 'tic'
+      ? texto.replace(/\bdatos personales\b/g, ' ').replace(/\bproteccion de datos\b/g, ' ')
+      : texto;
     const porCpv = area.cpv.some((prefijo) => cpvs.some((cpv) => cpv.startsWith(prefijo)));
-    let porPalabra = 0;
+    let porPalabra = puntosExtra(area.id, textoArea);
     for (const palabra of area.palabras) {
       const frase = typeof palabra === 'string' ? palabra : palabra.frase;
       const peso = typeof palabra === 'string' ? 2 : palabra.puntos;
       const regex = new RegExp(`\\b${frase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
-      if (regex.test(texto)) porPalabra += peso;
-    }
-    if (area.id === 'comunicacion' && /\borganizacion\b/.test(texto) && /\b(evento|eventos|congreso|gala|feria|salon|jornada|jornadas|acto|actos)\b/.test(texto)) {
-      porPalabra += 2;
+      if (regex.test(textoArea)) porPalabra += peso;
     }
     if (porPalabra < 1) continue;
     if (porPalabra < 2 && !porCpv) continue;
@@ -245,15 +271,20 @@ function clasificar(item) {
   }
 
   const candidatas = [...puntos.entries()].filter(([, total]) => total >= 2);
-  if (!candidatas.length) return null;
-  candidatas.sort((a, b) => b[1] - a[1] || PRIORIDAD.indexOf(a[0]) - PRIORIDAD.indexOf(b[0]));
-  const [ganadora] = candidatas;
-  const etiqueta = AREAS.find((area) => area.id === ganadora[0]).etiqueta;
-  const tambien = candidatas.slice(1).map(([id]) => ({
-    id,
-    etiqueta: AREAS.find((area) => area.id === id).etiqueta,
-  }));
-  return { id: ganadora[0], etiqueta, tambien };
+  if (!candidatas.length) return { tipo: 'tema' };
+  const validas = candidatas.filter(([id]) => item.importe >= AREAS.find((area) => area.id === id).minimo);
+  if (!validas.length) return { tipo: 'importe' };
+  validas.sort((a, b) => b[1] - a[1] || PRIORIDAD.indexOf(a[0]) - PRIORIDAD.indexOf(b[0]));
+  const [ganadora, ...resto] = validas;
+  return {
+    tipo: 'ok',
+    id: ganadora[0],
+    etiqueta: AREAS.find((area) => area.id === ganadora[0]).etiqueta,
+    tambien: resto.map(([id]) => ({
+      id,
+      etiqueta: AREAS.find((area) => area.id === id).etiqueta,
+    })),
+  };
 }
 
 function evaluar(item, ahora) {
@@ -270,7 +301,7 @@ function evaluar(item, ahora) {
   }
   if (soloCamaras(item)) return { ok: false, motivo: 'camaras' };
   const area = clasificar(item);
-  if (!area) return { ok: false, motivo: 'tema' };
+  if (area.tipo !== 'ok') return { ok: false, motivo: area.tipo };
   return {
     ok: true,
     ficha: {

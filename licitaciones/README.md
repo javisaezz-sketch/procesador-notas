@@ -4,11 +4,9 @@ Cada mañana revisa los anuncios oficiales de la Plataforma de Contratación del
 
 Entran servicios de Catalunya, Madrid y Aragón, desde 7.000 € sin IVA, de estas áreas:
 
-- Comunicación y eventos
-- TIC, datos y PMO
-- Mentoría
-- Dinamización comercial
-- Videovigilancia, cuando el objeto es la plataforma y no solo las cámaras
+- Comunicación y eventos, desde 7.000 €
+- TIC, desde 30.000 €: PMO, datos, gobernanza o catálogos de datos, oficina técnica TIC, redacción o soporte de pliegos TIC, consultoría TIC, y videovigilancia solo si piden plataforma
+- Mentoría, coaching, trabajo para pymes, dinamización comercial y formación empresarial o cursos para entidades con parte TIC o empresarial, desde 7.000 €
 
 Quedan fuera el catering y los alquileres de espacio, carpa, escenario, sonido, mobiliario o vehículos. El texto que decide cada área está en `perfil.cjs`.
 

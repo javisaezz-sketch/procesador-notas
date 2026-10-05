@@ -101,6 +101,7 @@ test('el alquiler de software de la oficina del dato no es un alquiler grande', 
   const decision = evaluar(
     base({
       cpvs: ['72316000'],
+      importe: 45000,
       titulo: 'Oficina del dato',
       texto: 'Alquiler de licencias de software para la oficina del dato',
     }),
@@ -113,6 +114,7 @@ test('el alquiler de software de la oficina del dato no es un alquiler grande', 
 test('la videovigilancia entra con plataforma y sale si solo son cámaras', () => {
   const plataforma = evaluar(
     base({
+      importe: 80000,
       cpvs: ['72000000'],
       titulo: 'Plataforma de videovigilancia en la nube',
       texto: 'Plataforma de videovigilancia en la nube con analítica',
@@ -120,14 +122,23 @@ test('la videovigilancia entra con plataforma y sale si solo son cámaras', () =
     AHORA,
   );
   assert.equal(plataforma.ok, true);
-  assert.equal(plataforma.ficha.area, 'videovigilancia');
+  assert.equal(plataforma.ficha.area, 'tic');
   assert.equal(
     evaluar(base({
+      importe: 80000,
       titulo: 'Instalación de cámaras de videovigilancia',
       texto: 'Instalación de cámaras de videovigilancia en el casco urbano',
       cpvs: ['35125300'],
     }), AHORA).motivo,
     'camaras',
+  );
+  assert.equal(
+    evaluar(base({
+      importe: 12000,
+      titulo: 'Plataforma de videovigilancia municipal',
+      texto: 'Servicio de plataforma de videovigilancia',
+    }), AHORA).motivo,
+    'importe',
   );
 });
 
@@ -172,7 +183,7 @@ test('un congreso entra si el CPV es de eventos; la atención al pasajero no', (
 test('separa mentoría y dinamización comercial', () => {
   assert.equal(
     evaluar(base({ cpvs: [], titulo: 'Programa de mentoría comercial', texto: 'Programa de mentoría para comercios' }), AHORA).ficha.area,
-    'mentoria',
+    'empresa',
   );
   assert.equal(
     evaluar(
@@ -183,7 +194,49 @@ test('separa mentoría y dinamización comercial', () => {
       }),
       AHORA,
     ).ficha.area,
-    'dinamizacion',
+    'empresa',
+  );
+});
+
+test('el filtro TIC pide 30.000 y palabras de datos, pliegos o consultoría', () => {
+  assert.equal(
+    evaluar(base({ importe: 42000, titulo: 'Consultoría TIC del ayuntamiento', texto: 'Servicio de consultoría TIC' }), AHORA).ficha.area,
+    'tic',
+  );
+  assert.equal(
+    evaluar(base({ importe: 29000, titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }), AHORA).motivo,
+    'importe',
+  );
+  assert.equal(
+    evaluar(base({
+      importe: 55000,
+      titulo: 'Soporte para la redacción de pliegos TIC',
+      texto: 'Asistencia para la redacción de pliegos TIC',
+    }), AHORA).ficha.area,
+    'tic',
+  );
+  assert.equal(
+    evaluar(base({ importe: 40000, titulo: 'Consultoría jurídica', texto: 'Servicio de consultoría jurídica del contrato' }), AHORA).motivo,
+    'tema',
+  );
+  assert.equal(
+    evaluar(base({ importe: 40000, titulo: 'Protección de datos personales', texto: 'Delegado de protección de datos personales' }), AHORA).motivo,
+    'tema',
+  );
+});
+
+test('formación y pymes entran desde 7.000 si hay parte empresarial o TIC', () => {
+  assert.equal(
+    evaluar(base({ importe: 9000, titulo: 'Curso de competencias digitales para pymes', texto: 'Curso de competencias digitales para pymes' }), AHORA).ficha.area,
+    'empresa',
+  );
+  assert.equal(
+    evaluar(base({ importe: 9000, titulo: 'Coaching para equipos directivos', texto: 'Programa de coaching para equipos directivos' }), AHORA).ficha.area,
+    'empresa',
+  );
+  assert.equal(
+    evaluar(base({ importe: 9000, titulo: 'Curso de manipulador de alimentos', texto: 'Curso de manipulador de alimentos' }), AHORA).motivo,
+    'tema',
   );
 });
 
@@ -282,7 +335,7 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
       {
         clave: 'A::1',
         area: 'tic',
-        etiqueta: 'TIC, datos y PMO',
+        etiqueta: 'TIC, datos, PMO y videovigilancia',
         titulo: 'Oficina del dato',
         organo: 'Ayuntamiento de Zaragoza',
         importe: 20000,
@@ -318,7 +371,7 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
     ],
   });
   const comunicacion = mensaje.texto.indexOf('Comunicación y eventos');
-  const tic = mensaje.texto.indexOf('TIC, datos y PMO');
+  const tic = mensaje.texto.indexOf('TIC, datos, PMO y videovigilancia');
   const congreso = mensaje.texto.indexOf('Congreso de comercio');
   const gala = mensaje.texto.indexOf('Gala de Navidad');
   assert.ok(comunicacion < tic);

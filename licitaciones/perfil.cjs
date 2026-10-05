@@ -47,8 +47,26 @@ const AREAS = [
     id: 'tic',
     etiqueta: 'TIC, datos, PMO y videovigilancia',
     minimo: 30000,
-    cpv: [],
+    cpv: ['72'],
     palabras: [
+      { frase: 'consultoria', puntos: 1 },
+      { frase: 'datos', puntos: 1 },
+      { frase: 'proyecto', puntos: 1 },
+      { frase: 'proyectos', puntos: 1 },
+      { frase: 'plataforma', puntos: 1 },
+      { frase: 'oficina', puntos: 1 },
+      { frase: 'sistemas', puntos: 1 },
+      { frase: 'software', puntos: 1 },
+      { frase: 'digital', puntos: 1 },
+      { frase: 'tecnolog', puntos: 1 },
+      { frase: 'pliego', puntos: 1 },
+      { frase: 'pliegos', puntos: 1 },
+      { frase: 'plec', puntos: 1 },
+      { frase: 'plecs', puntos: 1 },
+      { frase: 'gobernanza', puntos: 1 },
+      { frase: 'governanza', puntos: 1 },
+      { frase: 'catalogo', puntos: 1 },
+      { frase: 'videovigilancia', puntos: 1 },
       'pmo',
       'oficina de proyectos',
       'oficina de proyecto',
@@ -87,7 +105,22 @@ const AREAS = [
     palabras: [
       'mentoria',
       'mentorias',
+      'mentor',
       'coaching',
+      'tutorizacion',
+      'pymes',
+      'pyme',
+      'pimes',
+      'pime',
+      'emprendimiento',
+      'emprenedoria',
+      'asesoramiento empresarial',
+      'asesoramiento a empresas',
+      'asesoramiento a pymes',
+      'acompanamiento empresarial',
+      'promocion comercial',
+      'promocion del comercio',
+      'reactivacion comercial',
       'dinamizacion comercial',
       'dinamizacion del comercio',
       'dinamizacion de comercio',
@@ -262,10 +295,14 @@ function clasificar(item) {
     for (const palabra of area.palabras) {
       const frase = typeof palabra === 'string' ? palabra : palabra.frase;
       const peso = typeof palabra === 'string' ? 2 : palabra.puntos;
-      const regex = new RegExp(`\\b${frase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+      const escapada = frase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = peso < 2 && /^(tecnolog|digital|informatic|ciber)/.test(frase)
+        ? new RegExp(`\\b${escapada}\\w*`)
+        : new RegExp(`\\b${escapada}\\b`);
       if (regex.test(textoArea)) porPalabra += peso;
     }
-    if (porPalabra < 1) continue;
+    // TIC: cualquier servicio CPV 72 por encima del mínimo entra, aunque el título sea genérico.
+    if (porPalabra < 1 && !(area.id === 'tic' && porCpv)) continue;
     if (porPalabra < 2 && !porCpv) continue;
     puntos.set(area.id, porPalabra + (porCpv ? 3 : 0));
   }

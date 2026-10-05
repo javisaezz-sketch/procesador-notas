@@ -1,3 +1,5 @@
+const { encajar, pesoEncaje } = require('./encaje.cjs');
+
 const SECCIONES = [
   {
     id: 'comunicacion',
@@ -35,10 +37,16 @@ function euros(importe) {
   return `${texto} €`;
 }
 
+function conMarca(ficha) {
+  return { ...ficha, encaje: ficha.encaje || encajar(ficha) };
+}
+
 function ordenar(lista) {
-  return [...lista].sort((a, b) => {
+  return [...lista].map(conMarca).sort((a, b) => {
     const area = ORDEN.indexOf(a.area) - ORDEN.indexOf(b.area);
     if (area) return area;
+    const encaje = pesoEncaje(a) - pesoEncaje(b);
+    if (encaje) return encaje;
     if (a.tope !== b.tope) return a.tope < b.tope ? -1 : 1;
     return b.importe - a.importe;
   });
@@ -86,9 +94,12 @@ function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) 
     for (const ficha of fichas) {
       const nueva = nuevas?.has(ficha.clave) ? ' · Nueva' : '';
       const tambien = ficha.tambien?.length ? ` · También: ${ficha.tambien.map((item) => item.etiqueta).join(', ')}` : '';
+      const encaje = ficha.encaje || encajar(ficha);
+      const colorEncaje = encaje.vehiculo === 'revisar' ? '#8a5a00' : '#0b6e4f';
       lineas.push(
         `${ficha.titulo}${nueva}`,
         ficha.organo || '',
+        `${encaje.marca} · ${encaje.motivo}`,
         `${euros(ficha.importe)}    Publicación ${fechaCorta(ficha.publicacion)}    Tope ${fechaTope(ficha.tope)}${tambien}`,
         ficha.enlace || '',
         '',
@@ -97,6 +108,7 @@ function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) 
         '<div style="border-top:1px solid #ddd;padding:12px 0">',
         `<div style="font-size:16px">${escapar(ficha.titulo)}${nueva ? ' <span style="color:#0b6e4f">Nueva</span>' : ''}</div>`,
         `<div style="color:#444;margin-top:4px">${escapar(ficha.organo || '')}</div>`,
+        `<div style="margin-top:6px;color:${colorEncaje}"><strong>${escapar(encaje.marca)}</strong> · ${escapar(encaje.motivo)}</div>`,
         `<div style="margin-top:6px"><strong>${escapar(euros(ficha.importe))}</strong>`,
         ` · Publicación ${escapar(fechaCorta(ficha.publicacion))}`,
         ` · Tope ${escapar(fechaTope(ficha.tope))}`,

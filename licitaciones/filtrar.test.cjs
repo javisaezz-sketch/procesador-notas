@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { evaluar } = require('./perfil.cjs');
+const { encajar } = require('./encaje.cjs');
 const { parsearEntrada, listarEntradas, enlaceNext } = require('./parsear.cjs');
 const { recorrerFeed } = require('./fuentes.cjs');
 const { construirMensaje } = require('./correo.cjs');
@@ -419,6 +420,8 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   assert.match(mensaje.texto, /Ninguna en este tramo/);
   assert.match(mensaje.texto, /Galas, actos, campañas/);
   assert.match(mensaje.texto, /Mentoría, coaching, pymes/);
+  assert.match(mensaje.texto, /Encaja con Aube/);
+  assert.match(mensaje.texto, /Encaja con Alejandro \/ Tu Coach/);
   assert.ok(congreso < gala);
   assert.match(mensaje.texto, /9\.000\s*€/);
   assert.match(mensaje.texto, /Publicación 02\/10\/2026/);
@@ -426,6 +429,29 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   assert.match(mensaje.texto, /https:\/\/ejemplo\/gala/);
   assert.match(mensaje.asunto, /3$/);
   assert.match(mensaje.html, /Nueva/);
+});
+
+test('marca Aube en plecs TIC, Alejandro en formación y Revisar en un mantenimiento genérico', () => {
+  assert.equal(encajar({ area: 'tic', titulo: 'Redacción de pliegos TIC', texto: 'Apoyo a la redacción de pliegos TIC' }).vehiculo, 'aube');
+  assert.equal(
+    evaluar(base({
+      importe: 18000,
+      cpvs: [],
+      titulo: 'Acompañamiento en economía circular a las empresas del Delta',
+      texto: 'Asesoramiento en economía circular a las empresas del territorio',
+    }), AHORA).ficha.encaje.vehiculo,
+    'alejandro',
+  );
+  assert.equal(
+    evaluar(base({
+      importe: 80000,
+      cpvs: ['72260000'],
+      titulo: 'Mantenimiento de aplicaciones',
+      texto: 'Servicio de mantenimiento de aplicaciones',
+    }), AHORA).ficha.encaje.vehiculo,
+    'revisar',
+  );
+  assert.equal(encajar({ area: 'tic', titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }).vehiculo, 'ambos');
 });
 
 test('el tramo diario va de las 7:40 a las 7:40 y el primero no deja un hueco', () => {

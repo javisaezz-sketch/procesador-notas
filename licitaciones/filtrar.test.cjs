@@ -432,9 +432,10 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
 });
 
 test('presentaciones de menos de 10.000 y mentorías empresariales van con Alejandro; el resto con Aube', () => {
-  assert.equal(encajar({ area: 'comunicacion', importe: 9000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).vehiculo, 'alejandro');
-  assert.equal(encajar({ area: 'comunicacion', importe: 10000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).vehiculo, 'aube');
-  assert.equal(encajar({ area: 'tic', importe: 80000, titulo: 'Redacción de pliegos TIC', texto: 'Apoyo a la redacción de pliegos TIC' }).vehiculo, 'aube');
+  assert.equal(encajar({ area: 'comunicacion', importe: 9000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).motivo, 'Presentación de menos de 10.000 €, como la Nit de la Pagesia.');
+  assert.equal(encajar({ area: 'comunicacion', importe: 10000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).motivo, 'Presentación de 10.000 € o más, como las ferias de Vic.');
+  assert.match(encajar({ area: 'tic', importe: 80000, titulo: 'Redacción de pliegos TIC', texto: 'Apoyo a la redacción de pliegos TIC' }).motivo, /UAT del BIT/);
+  assert.match(encajar({ area: 'tic', importe: 120000, titulo: 'Plataforma de videovigilancia', texto: 'Plataforma de videovigilancia municipal' }).motivo, /Guàrdia Urbana/);
   assert.equal(encajar({ area: 'tic', importe: 50000, titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }).vehiculo, 'aube');
   assert.equal(
     evaluar(base({

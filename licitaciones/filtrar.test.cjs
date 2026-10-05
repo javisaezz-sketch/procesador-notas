@@ -418,11 +418,9 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   assert.ok(comunicacion < tic);
   assert.ok(tic < mensaje.texto.indexOf('Mentoría, pymes y formación'));
   assert.match(mensaje.texto, /Ninguna en este tramo/);
-  assert.match(mensaje.texto, /Menos de 10.000 € con Alejandro/);
-  assert.match(mensaje.texto, /Las mentorías empresariales, con Alejandro/);
-  assert.match(mensaje.texto, /Encaja con Aube/);
-  assert.match(mensaje.texto, /Encaja con Alejandro \/ Tu Coach/);
-  assert.ok(gala < congreso);
+  assert.match(mensaje.texto, /Comunitat Valenciana y Baleares/);
+  assert.match(mensaje.texto, /Encaje Alto/);
+  assert.ok(congreso < gala);
   assert.match(mensaje.texto, /9\.000\s*€/);
   assert.match(mensaje.texto, /Publicación 02\/10\/2026/);
   assert.match(mensaje.texto, /Tope 22\/10\/2026 14:00/);
@@ -431,20 +429,19 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   assert.match(mensaje.html, /Nueva/);
 });
 
-test('presentaciones de menos de 10.000 y mentorías empresariales van con Alejandro; el resto con Aube', () => {
-  assert.equal(encajar({ area: 'comunicacion', importe: 9000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).motivo, 'Presentación de menos de 10.000 €, como la Nit de la Pagesia.');
-  assert.equal(encajar({ area: 'comunicacion', importe: 10000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).motivo, 'Presentación de 10.000 € o más, como las ferias de Vic.');
+test('el correo marca el nivel de encaje y acepta Valencia y Baleares', () => {
+  assert.equal(encajar({ area: 'comunicacion', importe: 9000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).nivel, 'alto');
   assert.match(encajar({ area: 'tic', importe: 80000, titulo: 'Redacción de pliegos TIC', texto: 'Apoyo a la redacción de pliegos TIC' }).motivo, /UAT del BIT/);
-  assert.match(encajar({ area: 'tic', importe: 120000, titulo: 'Plataforma de videovigilancia', texto: 'Plataforma de videovigilancia municipal' }).motivo, /Guàrdia Urbana/);
-  assert.equal(encajar({ area: 'tic', importe: 50000, titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }).vehiculo, 'aube');
+  assert.equal(encajar({ area: 'tic', importe: 120000, titulo: 'Plataforma de videovigilancia', texto: 'Plataforma de videovigilancia municipal' }).nivel, 'alto');
+  assert.equal(encajar({ area: 'tic', importe: 50000, titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }).nivel, 'alto');
   assert.equal(
     evaluar(base({
       importe: 8000,
       cpvs: [],
       titulo: 'Programa de mentoría empresarial',
       texto: 'Mentoría empresarial para pymes del polígono',
-    }), AHORA).ficha.encaje.vehiculo,
-    'alejandro',
+    }), AHORA).ficha.encaje.nivel,
+    'alto',
   );
   assert.equal(
     evaluar(base({
@@ -452,8 +449,8 @@ test('presentaciones de menos de 10.000 y mentorías empresariales van con Aleja
       cpvs: [],
       titulo: 'Acompañamiento en economía circular a las empresas del Delta',
       texto: 'Asesoramiento en economía circular a las empresas del territorio',
-    }), AHORA).ficha.encaje.vehiculo,
-    'aube',
+    }), AHORA).ficha.encaje.nivel,
+    'medio',
   );
   assert.equal(
     evaluar(base({
@@ -461,8 +458,22 @@ test('presentaciones de menos de 10.000 y mentorías empresariales van con Aleja
       cpvs: ['72260000'],
       titulo: 'Mantenimiento de aplicaciones',
       texto: 'Servicio de mantenimiento de aplicaciones',
-    }), AHORA).ficha.encaje.vehiculo,
-    'aube',
+    }), AHORA).ficha.encaje.nivel,
+    'bajo',
+  );
+  assert.equal(
+    evaluar(base({
+      lugares: [{ codigo: 'ES523', nombre: 'Valencia' }],
+      organoLugar: { codigo: 'ES523', nombre: 'Valencia' },
+    }), AHORA).ok,
+    true,
+  );
+  assert.equal(
+    evaluar(base({
+      lugares: [{ codigo: 'ES532', nombre: 'Mallorca' }],
+      organoLugar: { codigo: 'ES532', nombre: 'Palma' },
+    }), AHORA).ok,
+    true,
   );
 });
 

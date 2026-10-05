@@ -713,12 +713,12 @@ export default function ArticleDashboard({
         );
         setPublishArticle(null);
         setFeedback({
-          type: 'success',
+          type: data.avisoEtiquetas ? 'warning' : 'success',
           message: `"${articulo.titulo_generado}" se publicará en la siguiente pasada del pipeline.${
             notificar && emailNotificacion
               ? ` Al publicarse se avisará a ${emailNotificacion}.`
               : ''
-          }`,
+          }${data.avisoEtiquetas ? ` ${data.avisoEtiquetas}` : ''}`,
         });
         router.refresh();
         return;
@@ -739,10 +739,15 @@ export default function ArticleDashboard({
           data.wordpressPostUrl?.includes('instagram.com');
 
         const avisoLaglam = avisoAgenciaTexto(data.avisoAgencia);
+        const avisoTags = data.avisoEtiquetas ? ` ${data.avisoEtiquetas}` : '';
+        const etiquetadas = Array.isArray(data.etiquetadas) ? data.etiquetadas : [];
+        const colaTags = etiquetadas.length
+          ? ` Etiquetadas: ${etiquetadas.map((nick) => `@${nick}`).join(', ')}.`
+          : '';
         setFeedback({
-          type: 'success',
+          type: esIg && data.avisoEtiquetas ? 'warning' : 'success',
           message: esIg
-            ? `Publicado con éxito en Instagram (@laglamdelbuenvivir). Ya está visible en el feed.${avisoLaglam}`
+            ? `Publicado con éxito en Instagram (@laglamdelbuenvivir). Ya está visible en el feed.${colaTags}${avisoTags}${avisoLaglam}`
             : `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}${avisoBorradorInstagram(data)}`,
           link: data.wordpressPostUrl,
           linkLabel: esIg ? 'Ver post en Instagram' : 'Ver artículo publicado',
@@ -996,7 +1001,7 @@ export default function ArticleDashboard({
       );
       setGenerandoReviewId(null);
       setFeedback({
-        type: 'success',
+        type: data.avisoEtiquetas ? 'warning' : 'success',
         message: data.message || `Publicado en Instagram (@laglamdelbuenvivir): "${review.place_name}".`,
         link: data.instagramUrl,
         linkLabel: data.instagramUrl ? 'Ver post en Instagram' : undefined,
@@ -1521,7 +1526,9 @@ export default function ArticleDashboard({
           className={`mb-6 rounded-2xl px-5 py-4 text-base sm:text-sm ${
             feedback.type === 'success'
               ? 'border border-green-200 bg-green-50 text-green-800'
-              : feedback.type === 'info'
+              : feedback.type === 'warning'
+                ? 'border border-amber-200 bg-amber-50 text-amber-900'
+                : feedback.type === 'info'
                 ? 'border border-blue-200 bg-blue-50 text-blue-800'
                 : 'border border-red-200 bg-red-50 text-red-800'
           }`}

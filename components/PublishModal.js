@@ -182,7 +182,7 @@ export default function PublishModal({ articulo, onClose, onConfirm, isPublishin
               className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
             />
             <span className="mt-1 block text-xs text-slate-500">
-              Al publicar se etiquetan en la primera foto. Si son varias, sepáralas con comas.
+              Al publicar se etiquetan en la primera foto. Si alguna no se puede etiquetar, el post sale igual y te avisamos.
             </span>
           </label>
         )}

@@ -255,6 +255,9 @@ export default function GoogleMapsCard({
             placeholder="@cuenta o varias, separadas por comas"
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-800 focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
           />
+          <span className="mt-1 block text-[11px] text-slate-500">
+            Si alguna no se puede etiquetar, el post se publica igual.
+          </span>
         </label>
 
         {/* 3. Botones de acción */}

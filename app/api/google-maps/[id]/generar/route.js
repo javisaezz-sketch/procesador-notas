@@ -5,7 +5,6 @@ import {
   revertirPublicacionFallidaGoogleMaps,
 } from '@/lib/googleMaps';
 import { publicarArticulo } from '@/lib/publicarArticulo';
-import { parsearNicksInstagram } from '@/lib/instagram';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 90;
@@ -19,16 +18,6 @@ export async function POST(request, { params }) {
     if (!review) {
       return NextResponse.json(
         { ok: false, error: 'Faltan los datos de la reseña en la petición' },
-        { status: 400 },
-      );
-    }
-
-    let etiquetasCompactas = '';
-    try {
-      etiquetasCompactas = parsearNicksInstagram(etiquetasInstagram).join(',');
-    } catch (nickError) {
-      return NextResponse.json(
-        { ok: false, error: nickError.message },
         { status: 400 },
       );
     }
@@ -49,16 +38,18 @@ export async function POST(request, { params }) {
 
     try {
       const publicado = await publicarArticulo(resultado.articulo.id, 'feed', {
-        etiquetasInstagram: etiquetasCompactas,
+        etiquetasInstagram: String(etiquetasInstagram || ''),
       });
       const etiquetadas = Array.isArray(publicado.etiquetadas) ? publicado.etiquetadas : [];
       const cola = etiquetadas.length
         ? ` Etiquetadas: ${etiquetadas.map((nick) => `@${nick}`).join(', ')}.`
         : '';
+      const aviso = publicado.avisoEtiquetas ? ` ${publicado.avisoEtiquetas}` : '';
       return NextResponse.json({
         ok: true,
         publicado: true,
-        message: `Post publicado en Instagram (@laglamdelbuenvivir).${cola}`,
+        message: `Post publicado en Instagram (@laglamdelbuenvivir).${cola}${aviso}`,
+        avisoEtiquetas: publicado.avisoEtiquetas || null,
         articulo: publicado.articulo || resultado.articulo,
         notaId: resultado.notaId,
         instagramUrl: publicado.wordpressPostUrl || null,

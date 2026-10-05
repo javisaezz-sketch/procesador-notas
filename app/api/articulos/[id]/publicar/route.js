@@ -15,15 +15,7 @@ export async function POST(request, { params }) {
     const programarEn = body.programarEn || null;
     const notificar = body.notificar === true ? true : body.notificar === false ? false : null;
     const emailNotificacion = body.emailNotificacion || null;
-    let etiquetasInstagram = '';
-    try {
-      etiquetasInstagram = parsearNicksInstagram(body.etiquetasInstagram).join(',');
-    } catch (nickError) {
-      return NextResponse.json(
-        { ok: false, error: nickError.message },
-        { status: 400 },
-      );
-    }
+    const etiquetasInstagram = String(body.etiquetasInstagram || '').trim();
 
     if (!articuloId || Number.isNaN(articuloId)) {
       return NextResponse.json(
@@ -40,18 +32,21 @@ export async function POST(request, { params }) {
     }
 
     if (programarEn) {
-      const slugProgramado = etiquetasInstagram && categoriaSlug === 'feed'
-        ? `feed:${etiquetasInstagram}`
-        : categoriaSlug;
-      if (String(slugProgramado || '').length > 80) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: 'Son demasiadas etiquetas para dejarlas programadas. Publica ahora o deja menos cuentas.',
-          },
-          { status: 400 },
-        );
+      const { nicks, avisos } = parsearNicksInstagram(etiquetasInstagram);
+      const guardados = [];
+      if (categoriaSlug === 'feed') {
+        for (const nick of nicks) {
+          const candidato = [...guardados, nick].join(',');
+          if (`feed:${candidato}`.length > 80) {
+            avisos.push(`@${nick} no cabe al programar y no se etiquetará.`);
+            continue;
+          }
+          guardados.push(nick);
+        }
       }
+      const slugProgramado = guardados.length && categoriaSlug === 'feed'
+        ? `feed:${guardados.join(',')}`
+        : categoriaSlug;
       const programado = await programarArticulo(articuloId, {
         cuando: programarEn,
         categoriaSlug: slugProgramado,
@@ -59,12 +54,15 @@ export async function POST(request, { params }) {
         notificar,
         emailNotificacion,
       });
+      const avisoEtiquetas = avisos.length ? avisos.join(' ') : null;
+      const previstas = guardados.length
+        ? ` Se intentará etiquetar a ${guardados.map((nick) => `@${nick}`).join(', ')}.`
+        : '';
       return NextResponse.json({
         ok: true,
         programado: true,
-        message: etiquetasInstagram
-          ? `Publicación programada. Se etiquetará a ${etiquetasInstagram.split(',').map((nick) => `@${nick}`).join(', ')}.`
-          : 'Publicación programada',
+        message: `Publicación programada.${previstas}${avisoEtiquetas ? ` ${avisoEtiquetas}` : ''}`,
+        avisoEtiquetas,
         fecha_programada: programado.articulo.fecha_programada,
         articulo: programado.articulo,
       });
@@ -81,9 +79,10 @@ export async function POST(request, { params }) {
       const cola = etiquetadas.length
         ? ` Etiquetadas: ${etiquetadas.map((nick) => `@${nick}`).join(', ')}.`
         : '';
+      const aviso = resultado.avisoEtiquetas ? ` ${resultado.avisoEtiquetas}` : '';
       return NextResponse.json({
         ok: true,
-        message: `Publicado con éxito en Instagram (@laglamdelbuenvivir).${cola}`,
+        message: `Publicado con éxito en Instagram (@laglamdelbuenvivir).${cola}${aviso}`,
         publicadoEnWeb: true,
         ...resultado,
       });

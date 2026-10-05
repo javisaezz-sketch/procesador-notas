@@ -418,11 +418,11 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   assert.ok(comunicacion < tic);
   assert.ok(tic < mensaje.texto.indexOf('Mentoría, pymes y formación'));
   assert.match(mensaje.texto, /Ninguna en este tramo/);
-  assert.match(mensaje.texto, /Galas, actos, campañas/);
-  assert.match(mensaje.texto, /Mentoría, coaching, pymes/);
+  assert.match(mensaje.texto, /Menos de 10.000 € con Alejandro/);
+  assert.match(mensaje.texto, /Las mentorías empresariales, con Alejandro/);
   assert.match(mensaje.texto, /Encaja con Aube/);
   assert.match(mensaje.texto, /Encaja con Alejandro \/ Tu Coach/);
-  assert.ok(congreso < gala);
+  assert.ok(gala < congreso);
   assert.match(mensaje.texto, /9\.000\s*€/);
   assert.match(mensaje.texto, /Publicación 02\/10\/2026/);
   assert.match(mensaje.texto, /Tope 22\/10\/2026 14:00/);
@@ -431,8 +431,20 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   assert.match(mensaje.html, /Nueva/);
 });
 
-test('marca Aube en plecs TIC, Alejandro en formación y Revisar en un mantenimiento genérico', () => {
-  assert.equal(encajar({ area: 'tic', titulo: 'Redacción de pliegos TIC', texto: 'Apoyo a la redacción de pliegos TIC' }).vehiculo, 'aube');
+test('presentaciones de menos de 10.000 y mentorías empresariales van con Alejandro; el resto con Aube', () => {
+  assert.equal(encajar({ area: 'comunicacion', importe: 9000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).vehiculo, 'alejandro');
+  assert.equal(encajar({ area: 'comunicacion', importe: 10000, titulo: 'Gala institucional', texto: 'Dirección de la gala' }).vehiculo, 'aube');
+  assert.equal(encajar({ area: 'tic', importe: 80000, titulo: 'Redacción de pliegos TIC', texto: 'Apoyo a la redacción de pliegos TIC' }).vehiculo, 'aube');
+  assert.equal(encajar({ area: 'tic', importe: 50000, titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }).vehiculo, 'aube');
+  assert.equal(
+    evaluar(base({
+      importe: 8000,
+      cpvs: [],
+      titulo: 'Programa de mentoría empresarial',
+      texto: 'Mentoría empresarial para pymes del polígono',
+    }), AHORA).ficha.encaje.vehiculo,
+    'alejandro',
+  );
   assert.equal(
     evaluar(base({
       importe: 18000,
@@ -440,7 +452,7 @@ test('marca Aube en plecs TIC, Alejandro en formación y Revisar en un mantenimi
       titulo: 'Acompañamiento en economía circular a las empresas del Delta',
       texto: 'Asesoramiento en economía circular a las empresas del territorio',
     }), AHORA).ficha.encaje.vehiculo,
-    'alejandro',
+    'aube',
   );
   assert.equal(
     evaluar(base({
@@ -449,9 +461,8 @@ test('marca Aube en plecs TIC, Alejandro en formación y Revisar en un mantenimi
       titulo: 'Mantenimiento de aplicaciones',
       texto: 'Servicio de mantenimiento de aplicaciones',
     }), AHORA).ficha.encaje.vehiculo,
-    'revisar',
+    'aube',
   );
-  assert.equal(encajar({ area: 'tic', titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }).vehiculo, 'ambos');
 });
 
 test('el tramo diario va de las 7:40 a las 7:40 y el primero no deja un hueco', () => {

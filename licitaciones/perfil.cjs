@@ -1,6 +1,8 @@
 // Perfil de oferta. Edita palabras y CPV aquí: el correo diario solo aplica estas reglas.
 // Importe: valor estimado sin IVA. Territorio: sede o lugar de ejecución.
 
+const { encajar } = require('./encaje.cjs');
+
 const IMPORTE_MINIMO = 7000;
 
 const AREAS = [
@@ -132,6 +134,8 @@ const AREAS = [
       'dinamitzacio comercial',
       'formacion empresarial',
       'formacio empresarial',
+      'economia circular',
+      'transformacion digital',
     ],
   },
 ];
@@ -283,6 +287,8 @@ function puntosExtra(areaId, texto) {
   const empresarial = /\b(empresarial|emprend\w*|negocio|directiv\w*|comercial|pymes|pyme|pimes)\b/.test(limpio);
   if (curso && (hablaDeTic(limpio) || empresarial) && (paraEntidades || empresarial || hablaDeTic(limpio))) return 2;
   if (/\b(pymes|pyme|pimes|pime)\b/.test(limpio) && /\b(mentoria|coaching|formacion|formacio|curso|cursos|dinamizacion|dinamitzacio|asesoramiento|acompana\w*)\b/.test(limpio)) return 2;
+  if (/\basesoramiento\b/.test(limpio) && /\b(empresa|empresas|pymes|pyme|pimes)\b/.test(limpio)) return 2;
+  if (/\beconomia circular\b/.test(limpio) && /\b(empresa|empresas|pymes|industria)\b/.test(limpio)) return 2;
   return 0;
 }
 
@@ -359,6 +365,12 @@ function evaluar(item, ahora) {
       tambien: area.tambien,
       cpvs: item.cpvs,
       actualizado: item.actualizadoEpoch || 0,
+      encaje: encajar({
+        titulo: item.titulo,
+        organo: item.organo,
+        texto: item.texto,
+        area: area.id,
+      }),
     },
   };
 }

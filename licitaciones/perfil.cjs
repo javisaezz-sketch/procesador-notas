@@ -361,6 +361,9 @@ function evaluar(item, ahora) {
     return { ok: false, motivo: 'montaje' };
   }
   if (soloCamaras(item)) return { ok: false, motivo: 'camaras' };
+  if (/\b(mantenimiento|mantenimientos|manteniment|manteniments)\b/.test(normalizar(item.titulo))) {
+    return { ok: false, motivo: 'mantenimiento' };
+  }
   const area = clasificar(item);
   if (area.tipo !== 'ok') return { ok: false, motivo: area.tipo };
   return {

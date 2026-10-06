@@ -73,14 +73,19 @@ function guardarEstado(ruta, estado) {
 async function main() {
   const opciones = args(process.argv.slice(2));
   const ahora = ahoraMadrid();
-  if (opciones.modo === 'programado' && !puedeEnviarProgramado(ahora)) {
-    console.log(`Todavía no toca. El primer parte de las 7:40 es el martes 6 de octubre. Ahora en Madrid: ${ahora}`);
-    return;
-  }
-
   const estado = leerEstado(opciones.estado);
   estado.licitaciones ||= {};
   estado.enviadas ||= {};
+  if (opciones.modo === 'programado' && !puedeEnviarProgramado(ahora, estado.ultimoHasta)) {
+    const corte = `${ahora.slice(0, 10)}T07:40:00`;
+    const motivo = ahora < '2026-10-06T07:40:00'
+      ? 'El primer parte de las 7:40 es el martes 6 de octubre.'
+      : estado.ultimoHasta >= corte
+        ? 'El parte de hoy ya se envió.'
+        : 'Aún no son las 7:40 en Madrid.';
+    console.log(`Todavía no toca. ${motivo} Ahora en Madrid: ${ahora}`);
+    return;
+  }
   const repaso = opciones.modo === 'viernes' || opciones.modo === 'prueba';
   const tramo = repaso
     ? { desde: DESDE_VIERNES, hasta: ahora }

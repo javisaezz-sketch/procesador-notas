@@ -2,10 +2,12 @@ name: Licitaciones en plazo (diario)
 
 on:
   schedule:
-    # 05:40 UTC es las 7:40 en horario de verano; 06:40 UTC es las 7:40 en horario de invierno.
-    # El script solo envía cuando en Madrid son las 7, y no antes del martes 6 de octubre de 2026.
+    # GitHub a veces tira el disparo de las 7:40. Hay varios intentos por la mañana;
+    # el script envía una sola vez, a partir de las 7:40 de Madrid.
     - cron: '40 5 * * *'
     - cron: '40 6 * * *'
+    - cron: '40 7 * * *'
+    - cron: '40 8 * * *'
   workflow_dispatch:
     inputs:
       modo:

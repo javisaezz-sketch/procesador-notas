@@ -56,8 +56,12 @@ function fechaHumana(iso) {
   return `${DIAS[indice]} ${dia} de ${MESES[mes - 1]}, ${hora}`;
 }
 
-function puedeEnviarProgramado(ahora) {
-  return ahora >= PRIMERA_PROGRAMADA && ahora.slice(11, 13) === '07';
+function puedeEnviarProgramado(ahora, ultimoHasta) {
+  if (ahora < PRIMERA_PROGRAMADA) return false;
+  if (ahora.slice(11, 16) < '07:40') return false;
+  const corte = `${ahora.slice(0, 10)}T07:40:00`;
+  if (ultimoHasta && ultimoHasta >= corte) return false;
+  return true;
 }
 
 module.exports = {

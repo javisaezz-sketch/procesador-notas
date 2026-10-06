@@ -244,17 +244,8 @@ test('el filtro TIC pide 30.000 y palabras de datos, pliegos o consultoría', ()
       cpvs: ['72260000'],
       titulo: 'Mantenimiento de aplicaciones',
       texto: 'Servicio de mantenimiento de aplicaciones',
-    }), AHORA).ficha.area,
-    'tic',
-  );
-  assert.equal(
-    evaluar(base({
-      importe: 20000,
-      cpvs: ['72260000'],
-      titulo: 'Mantenimiento de aplicaciones',
-      texto: 'Servicio de mantenimiento de aplicaciones',
     }), AHORA).motivo,
-    'importe',
+    'mantenimiento',
   );
   assert.equal(
     evaluar(base({ importe: 8000, cpvs: [], titulo: 'Asesoramiento a pymes del polígono', texto: 'Asesoramiento a pymes del polígono' }), AHORA).ficha.area,
@@ -458,8 +449,8 @@ test('el correo marca el nivel de encaje y acepta Valencia y Baleares', () => {
       cpvs: ['72260000'],
       titulo: 'Mantenimiento de aplicaciones',
       texto: 'Servicio de mantenimiento de aplicaciones',
-    }), AHORA).ficha.encaje.nivel,
-    'bajo',
+    }), AHORA).motivo,
+    'mantenimiento',
   );
   assert.equal(
     evaluar(base({
@@ -494,7 +485,9 @@ test('una licitación entra en el tramo por su fecha de publicación', () => {
   assert.equal(dentroDeVentana({ publicacion: '2026-10-01' }, desde, hasta), false);
   assert.equal(puedeEnviarProgramado('2026-10-05T07:40:00'), false);
   assert.equal(puedeEnviarProgramado('2026-10-06T07:40:00'), true);
-  assert.equal(puedeEnviarProgramado('2026-10-06T08:40:00'), false);
+  assert.equal(puedeEnviarProgramado('2026-10-06T10:22:00'), true);
+  assert.equal(puedeEnviarProgramado('2026-10-06T10:22:00', '2026-10-06T07:40:00'), false);
+  assert.equal(puedeEnviarProgramado('2026-10-06T07:39:00'), false);
   assert.match(fechaHumana('2026-10-02T00:00:00'), /viernes 2 de octubre, 00:00/);
   assert.equal(new Date(madridAEpoch('2026-10-02T00:00:00')).toISOString(), '2026-10-01T22:00:00.000Z');
 });

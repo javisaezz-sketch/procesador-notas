@@ -290,13 +290,14 @@ export default function ArticleDashboard({
     setPipelineEnMarcha(true);
     setFeedback({
       type: 'info',
-      message: 'Pipeline en marcha: lee el correo y genera las notas de cuatro en cuatro.',
+      message: 'Pipeline en marcha: lee todo el correo y genera todas las notas que haya.',
     });
 
     try {
       let pasada = 0;
       let generados = 0;
       let nuevas = 0;
+      let reenviadas = 0;
       let quedan = true;
       let avisos = 0;
       let cortes = 0;
@@ -342,12 +343,16 @@ export default function ArticleDashboard({
         pasada += 1;
         generados += data.resumen?.articulosGenerados ?? 0;
         nuevas += data.resumen?.emailsNuevas ?? 0;
+        reenviadas += data.resumen?.respuestasReenviadas ?? 0;
         avisos += data.resumen?.advertencias ?? 0;
         quedan = Boolean(data.resumen?.quedanNotas);
         router.refresh();
       }
 
-      const message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.${avisos ? ' Hay avisos: mira la franja de arriba.' : ''}${quedan ? ' Quedan notas en la cola: no se han perdido. Vuelve a pulsar Poner en marcha.' : ''}`;
+      const respuestas = reenviadas > 0
+        ? ` ${reenviadas} respuesta${reenviadas === 1 ? '' : 's'} reenviada${reenviadas === 1 ? '' : 's'} a Noe.`
+        : '';
+      const message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.${respuestas}${avisos ? ' Hay avisos: ábrelos en Errores IA.' : ''}${quedan ? ' Quedan notas en la cola: no se han perdido. Vuelve a pulsar Poner en marcha.' : ''}`;
       setFeedback({ type: 'success', message });
       setUltimaActualizacion(new Date());
       if (typeof window !== 'undefined') {
@@ -653,7 +658,7 @@ export default function ArticleDashboard({
   async function handlePublicar(
     articulo,
     categoriaSlug,
-    { publicarEnWeb = false, programarEn = null, notificar = null, emailNotificacion = null } = {},
+    { publicarEnWeb = false, programarEn = null, notificar = null, emailNotificacion = null, etiquetasInstagram = '' } = {},
   ) {
     setPublishingId(articulo.id);
     setFeedback({
@@ -682,6 +687,7 @@ export default function ArticleDashboard({
           programarEn,
           notificar,
           emailNotificacion,
+          etiquetasInstagram,
         }),
       });
 
@@ -712,12 +718,12 @@ export default function ArticleDashboard({
         );
         setPublishArticle(null);
         setFeedback({
-          type: 'success',
+          type: data.avisoEtiquetas ? 'warning' : 'success',
           message: `"${articulo.titulo_generado}" se publicará en la siguiente pasada del pipeline.${
             notificar && emailNotificacion
               ? ` Al publicarse se avisará a ${emailNotificacion}.`
               : ''
-          }`,
+          }${data.avisoEtiquetas ? ` ${data.avisoEtiquetas}` : ''}`,
         });
         router.refresh();
         return;
@@ -738,10 +744,15 @@ export default function ArticleDashboard({
           data.wordpressPostUrl?.includes('instagram.com');
 
         const avisoLaglam = avisoAgenciaTexto(data.avisoAgencia);
+        const avisoTags = data.avisoEtiquetas ? ` ${data.avisoEtiquetas}` : '';
+        const etiquetadas = Array.isArray(data.etiquetadas) ? data.etiquetadas : [];
+        const colaTags = etiquetadas.length
+          ? ` Etiquetadas: ${etiquetadas.map((nick) => `@${nick}`).join(', ')}.`
+          : '';
         setFeedback({
-          type: 'success',
+          type: esIg && data.avisoEtiquetas ? 'warning' : 'success',
           message: esIg
-            ? `Publicado con éxito en Instagram (@laglamdelbuenvivir). Ya está visible en el feed.${avisoLaglam}`
+            ? `Publicado con éxito en Instagram (@laglamdelbuenvivir). Ya está visible en el feed.${colaTags}${avisoTags}${avisoLaglam}`
             : `Publicado en ${data.medio} → categoría "${data.categoria}". Ya está visible en la web.${data.emailNotificacion ? ` Notificación a ${data.emailNotificacion}.` : ''}${mensajeEmailBuzon(data.emailBuzon)}${avisoBorradorInstagram(data)}`,
           link: data.wordpressPostUrl,
           linkLabel: esIg ? 'Ver post en Instagram' : 'Ver artículo publicado',
@@ -960,6 +971,7 @@ export default function ArticleDashboard({
     fotoSeleccionadaUrl,
     fotosSeleccionadas,
     instruccionesEditor,
+    etiquetasInstagram,
   }) {
     setGenerandoReviewId(review.review_id);
     setFeedback(null);
@@ -975,6 +987,7 @@ export default function ArticleDashboard({
             fotoSeleccionadaUrl,
             fotosSeleccionadas,
             instruccionesEditor,
+            etiquetasInstagram,
           }),
         },
       );
@@ -993,8 +1006,8 @@ export default function ArticleDashboard({
       );
       setGenerandoReviewId(null);
       setFeedback({
-        type: 'success',
-        message: `Publicado en Instagram (@laglamdelbuenvivir): "${review.place_name}".`,
+        type: data.avisoEtiquetas ? 'warning' : 'success',
+        message: data.message || `Publicado en Instagram (@laglamdelbuenvivir): "${review.place_name}".`,
         link: data.instagramUrl,
         linkLabel: data.instagramUrl ? 'Ver post en Instagram' : undefined,
       });
@@ -1518,7 +1531,9 @@ export default function ArticleDashboard({
           className={`mb-6 rounded-2xl px-5 py-4 text-base sm:text-sm ${
             feedback.type === 'success'
               ? 'border border-green-200 bg-green-50 text-green-800'
-              : feedback.type === 'info'
+              : feedback.type === 'warning'
+                ? 'border border-amber-200 bg-amber-50 text-amber-900'
+                : feedback.type === 'info'
                 ? 'border border-blue-200 bg-blue-50 text-blue-800'
                 : 'border border-red-200 bg-red-50 text-red-800'
           }`}

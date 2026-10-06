@@ -21,7 +21,11 @@ export async function POST() {
 
     const nuevas = resumen.emails?.nuevas ?? 0;
     const generados = resumen.articulosGenerados ?? 0;
+    const reenviadas = resumen.emails?.reenviadas ?? 0;
     let message = `Pipeline listo. ${nuevas} email${nuevas === 1 ? '' : 's'} nuevo${nuevas === 1 ? '' : 's'}, ${generados} artículo${generados === 1 ? '' : 's'} generado${generados === 1 ? '' : 's'}.`;
+    if (reenviadas > 0) {
+      message += ` ${reenviadas} respuesta${reenviadas === 1 ? '' : 's'} reenviada${reenviadas === 1 ? '' : 's'} a Noe.`;
+    }
 
     if (resumen.quedanNotas) {
       message += ' Sigo con las que quedan.';
@@ -38,6 +42,7 @@ export async function POST() {
       message,
       resumen: {
         emailsNuevas: nuevas,
+        respuestasReenviadas: reenviadas,
         articulosGenerados: generados,
         quedanNotas: resumen.quedanNotas,
         advertencias: resumen.advertencias?.length ?? 0,

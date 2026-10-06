@@ -18,9 +18,10 @@ function resumirAdvertencias(advertencias = []) {
 
   for (const item of advertencias.slice(0, 3)) {
     if (item.medio) {
-      partes.push(`POP3 ${item.medio}`);
-    } else if (item.notaId) {
-      partes.push(`Gemini nota #${item.notaId}`);
+      partes.push(`POP3 ${item.medio}: ${String(item.error || '').slice(0, 120)}`);
+    } else if (item.error) {
+      const corto = String(item.error).replace(/\s+/g, ' ').slice(0, 160);
+      partes.push(item.notaId ? `Nota #${item.notaId}: ${corto}` : corto);
     }
   }
 

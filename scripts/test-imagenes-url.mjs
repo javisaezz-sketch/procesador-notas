@@ -32,12 +32,46 @@ const $json = load(jsonLdHtml);
 const candidatasJson = recolectarUrlsImagenesPagina($json, jsonLdHtml, baseUrl);
 const okJson = candidatasJson[0]?.includes('jsonld/principal');
 
-const okBasura = esUrlImagenBasura('https://cdn.ejemplo.com/logo-site.png');
+const okBasura = esUrlImagenBasura('https://track.ejemplo.com/pixel.gif');
+const okLogoNoMataOg =
+  !esUrlImagenBasura('https://cdn.ejemplo.com/fotos/logo-campana.jpg');
+
+const graphHtml = `
+<html><head>
+<script type="application/ld+json">
+{"@graph":[{"@type":"NewsArticle","image":{"@type":"ImageObject","url":"https://cdn.ejemplo.com/graph/hero.jpg"}}]}
+</script>
+</head><body>
+<img src="https://cdn.ejemplo.com/pixel.gif" width="1" height="1" />
+<img data-src="https://cdn.ejemplo.com/lazy/cuerpo.jpg" width="800" height="500" />
+</body></html>`;
+const candidatasGraph = recolectarUrlsImagenesPagina(load(graphHtml), graphHtml, baseUrl);
+const okGraph = candidatasGraph[0]?.includes('graph/hero');
+const okLazy = candidatasGraph.some((url) => url.includes('lazy/cuerpo'));
+
+const srcsetHtml = `
+<html><body><article>
+<img src="https://cdn.ejemplo.com/fotos/nota-300x200.jpg"
+ srcset="https://cdn.ejemplo.com/fotos/nota-300x200.jpg 300w, https://cdn.ejemplo.com/fotos/nota-1600x900.jpg 1600w" />
+</article></body></html>`;
+const candidatasSrc = recolectarUrlsImagenesPagina(load(srcsetHtml), srcsetHtml, baseUrl);
+const okSrc =
+  candidatasSrc[0]?.includes('nota-1600x900') || candidatasSrc[0]?.endsWith('/nota.jpg') || candidatasSrc.some((url) => url.endsWith('/nota.jpg') || url.includes('nota-1600x900'));
+
+const nextHtml = `
+<html><body>
+<img src="/_next/image?url=https%3A%2F%2Fcdn.ejemplo.com%2Ffotos%2Foriginal.jpg&amp;w=640" />
+</body></html>`;
+const candidatasNext = recolectarUrlsImagenesPagina(load(nextHtml), nextHtml, baseUrl);
+const okNext = candidatasNext.some((url) => url.includes('cdn.ejemplo.com/fotos/original.jpg'));
 
 console.log('og primero:', candidatasOg[0]);
 console.log('jsonld primero:', candidatasJson[0]);
-console.log('OK:', okOg && okJson && okBasura);
+console.log('graph primero:', candidatasGraph[0]);
+console.log('srcset primero:', candidatasSrc[0]);
+console.log('next:', candidatasNext.slice(0, 3));
+console.log('OK:', okOg && okJson && okBasura && okLogoNoMataOg && okGraph && okLazy && okSrc && okNext);
 
-if (!okOg || !okJson || !okBasura) {
+if (!okOg || !okJson || !okBasura || !okLogoNoMataOg || !okGraph || !okLazy || !okSrc || !okNext) {
   process.exit(1);
 }

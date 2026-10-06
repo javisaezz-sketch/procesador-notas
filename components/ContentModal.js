@@ -159,7 +159,7 @@ export default function ContentModal({
                 maxSeleccion={articulo.medios?.slug === 'laglam' ? 10 : undefined}
                 descripcion={
                   articulo.medios?.slug === 'laglam'
-                    ? 'Marca las fotos del post. Una sola se publica como imagen. Si marcas varias, Instagram las sube en carrusel (máximo 10). La estrella es la primera.'
+                    ? 'Marca las fotos del post. Una sola se publica como imagen. Si marcas varias, Instagram las sube en carrusel (máximo 10). La estrella es la primera. Si una foto se ve pequeña o desenfocada, no se publica aunque esté marcada.'
                     : undefined
                 }
               />

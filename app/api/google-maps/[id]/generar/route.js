@@ -13,7 +13,7 @@ export async function POST(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const { review, fotoSeleccionadaUrl, fotosSeleccionadas, instruccionesEditor } = body;
+    const { review, fotoSeleccionadaUrl, fotosSeleccionadas, instruccionesEditor, etiquetasInstagram } = body;
 
     if (!review) {
       return NextResponse.json(
@@ -37,11 +37,19 @@ export async function POST(request, { params }) {
     });
 
     try {
-      const publicado = await publicarArticulo(resultado.articulo.id);
+      const publicado = await publicarArticulo(resultado.articulo.id, 'feed', {
+        etiquetasInstagram: String(etiquetasInstagram || ''),
+      });
+      const etiquetadas = Array.isArray(publicado.etiquetadas) ? publicado.etiquetadas : [];
+      const cola = etiquetadas.length
+        ? ` Etiquetadas: ${etiquetadas.map((nick) => `@${nick}`).join(', ')}.`
+        : '';
+      const aviso = publicado.avisoEtiquetas ? ` ${publicado.avisoEtiquetas}` : '';
       return NextResponse.json({
         ok: true,
         publicado: true,
-        message: 'Post publicado en Instagram (@laglamdelbuenvivir)',
+        message: `Post publicado en Instagram (@laglamdelbuenvivir).${cola}${aviso}`,
+        avisoEtiquetas: publicado.avisoEtiquetas || null,
         articulo: publicado.articulo || resultado.articulo,
         notaId: resultado.notaId,
         instagramUrl: publicado.wordpressPostUrl || null,

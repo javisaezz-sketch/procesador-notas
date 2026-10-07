@@ -69,13 +69,13 @@ function construirMensaje({ fechaTexto, licitaciones, nuevas, resumenFuentes }) 
   const asunto = `Licitaciones en plazo · ${fechaTexto} · ${licitaciones.length}`;
   const lineas = [
     `Licitaciones en plazo — ${fechaTexto}`,
-    `${licitaciones.length} abiertas · Catalunya, Madrid, Aragón, Comunitat Valenciana y Baleares`,
+    `${licitaciones.length} abiertas · Catalunya, Madrid, Aragón, Navarra, País Vasco, Comunitat Valenciana y Baleares`,
     '',
   ];
   const html = [
     '<div style="font-family:Georgia,serif;color:#1a1a1a;max-width:680px">',
     `<h1 style="font-size:22px;font-weight:normal">Licitaciones en plazo — ${escapar(fechaTexto)}</h1>`,
-    `<p>${licitaciones.length} abiertas · Catalunya, Madrid, Aragón, Comunitat Valenciana y Baleares</p>`,
+    `<p>${licitaciones.length} abiertas · Catalunya, Madrid, Aragón, Navarra, País Vasco, Comunitat Valenciana y Baleares</p>`,
   ];
 
   for (const seccion of SECCIONES) {

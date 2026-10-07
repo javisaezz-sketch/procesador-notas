@@ -206,8 +206,8 @@ function ejecucionAjena(texto) {
 function codigoDeAqui(codigo) {
   const limpio = String(codigo || '').trim().toUpperCase();
   if (!limpio) return false;
-  if (limpio.startsWith('ES51') || limpio.startsWith('ES30') || limpio.startsWith('ES24') || limpio.startsWith('ES52') || limpio.startsWith('ES53')) return true;
-  return ['08', '8', '17', '25', '43', '28', '22', '44', '50', '03', '3', '12', '46', '07', '7'].includes(limpio);
+  if (limpio.startsWith('ES51') || limpio.startsWith('ES30') || limpio.startsWith('ES24') || limpio.startsWith('ES22') || limpio.startsWith('ES21') || limpio.startsWith('ES52') || limpio.startsWith('ES53')) return true;
+  return ['08', '8', '17', '25', '43', '28', '22', '44', '50', '31', '01', '1', '20', '48', '03', '3', '12', '46', '07', '7'].includes(limpio);
 }
 
 function nombreDeAqui(nombre) {
@@ -227,6 +227,24 @@ function nombreDeAqui(nombre) {
     'teruel',
     'zaragoza',
     'aragon',
+    'navarra',
+    'nafarroa',
+    'pamplona',
+    'iruna',
+    'pais vasco',
+    'euskadi',
+    'bilbao',
+    'bilbo',
+    'donostia',
+    'san sebastian',
+    'vitoria',
+    'gasteiz',
+    'alava',
+    'araba',
+    'gipuzkoa',
+    'guipuzcoa',
+    'bizkaia',
+    'vizcaya',
     'valencia',
     'alacant',
     'alicante',

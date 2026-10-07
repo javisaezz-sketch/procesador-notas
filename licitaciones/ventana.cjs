@@ -36,6 +36,20 @@ function ventanaProgramada(ahora, ultimoHasta) {
   return { desde, hasta };
 }
 
+function epochDeFicha(ficha) {
+  if (ficha.actualizado) return ficha.actualizado;
+  if (ficha.actualizadoMadrid) return madridAEpoch(ficha.actualizadoMadrid);
+  return 0;
+}
+
+function actualizadoCercaDelTramo(ficha, desde, hasta) {
+  const epoch = epochDeFicha(ficha);
+  if (!epoch) return false;
+  const desdeEpoch = madridAEpoch(desde) - 6 * 60 * 60 * 1000;
+  const hastaEpoch = madridAEpoch(hasta);
+  return epoch >= desdeEpoch && epoch < hastaEpoch;
+}
+
 function dentroDeVentana(ficha, desde, hasta) {
   if (ficha.publicacion) {
     const dia = ficha.publicacion;
@@ -44,6 +58,10 @@ function dentroDeVentana(ficha, desde, hasta) {
     if (dia === diaHasta) return true;
     if (dia > diaDesde && dia < diaHasta) return true;
     if (dia === diaDesde) return `${dia}T23:59:59` >= desde;
+    // El feed estatal publica el día anterior con retraso. Si el aviso acaba de
+    // entrar en el fichero, no se pierde aunque la fecha de publicación ya haya quedado atrás.
+    const margen = sumarDias(diaDesde, -2);
+    if (dia >= margen && dia < diaDesde && actualizadoCercaDelTramo(ficha, desde, hasta)) return true;
     return false;
   }
   return Boolean(ficha.actualizadoMadrid) && ficha.actualizadoMadrid >= desde && ficha.actualizadoMadrid < hasta;

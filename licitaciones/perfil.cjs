@@ -41,6 +41,10 @@ const AREAS = [
       'nota de prensa',
       'notas de prensa',
       'gabinete de prensa',
+      'redes sociales',
+      'xarxes socials',
+      'exposicion itinerante',
+      'exposicio itinerant',
       { frase: 'congreso', puntos: 1 },
       { frase: 'feria', puntos: 1 },
       { frase: 'salon', puntos: 1 },
@@ -282,6 +286,9 @@ function puntosExtra(areaId, texto) {
   if (areaId === 'comunicacion' && /\borganizacion\b/.test(texto) && /\b(evento|eventos|congreso|gala|feria|salon|jornada|jornadas|acto|actos)\b/.test(texto)) {
     return 2;
   }
+  if (areaId === 'comunicacion' && /\borganitzacio\b/.test(texto) && /\b(esdeveniment|esdeveniments|acte|actes|gala|fira|exposicio)\b/.test(texto)) {
+    return 2;
+  }
   if (areaId !== 'tic' && areaId !== 'empresa') return 0;
   const limpio = texto.replace(/\bdatos personales\b/g, ' ').replace(/\bproteccion de datos\b/g, ' ');
   if (areaId === 'tic') {
@@ -315,6 +322,7 @@ function clasificar(item) {
       ? texto.replace(/\bdatos personales\b/g, ' ').replace(/\bproteccion de datos\b/g, ' ')
       : texto;
     const porCpv = area.cpv.some((prefijo) => cpvs.some((cpv) => cpv.startsWith(prefijo)));
+    const eventoPorCpv = area.id === 'comunicacion' && cpvs.some((cpv) => /^(79950|79951|79952)/.test(cpv));
     let porPalabra = puntosExtra(area.id, textoArea);
     for (const palabra of area.palabras) {
       const frase = typeof palabra === 'string' ? palabra : palabra.frase;
@@ -325,8 +333,8 @@ function clasificar(item) {
         : new RegExp(`\\b${escapada}\\b`);
       if (regex.test(textoArea)) porPalabra += peso;
     }
-    // TIC: cualquier servicio CPV 72 por encima del mínimo entra, aunque el título sea genérico.
-    if (porPalabra < 1 && !(area.id === 'tic' && porCpv)) continue;
+    // TIC (CPV 72) y eventos (CPV 79950-79952) entran solo con el código, por encima del mínimo.
+    if (porPalabra < 1 && !((area.id === 'tic' && porCpv) || eventoPorCpv)) continue;
     if (porPalabra < 2 && !porCpv) continue;
     puntos.set(area.id, porPalabra + (porCpv ? 3 : 0));
   }

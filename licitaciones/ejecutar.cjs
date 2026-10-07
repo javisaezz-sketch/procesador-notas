@@ -92,10 +92,9 @@ async function main() {
     : estado.ultimoHasta
       ? ventanaProgramada(ahora, estado.ultimoHasta)
       : { desde: DESDE_VIERNES, hasta: ventanaProgramada(ahora, null).hasta };
-  const inicioFeed = madridAEpoch(tramo.desde) - 6 * 60 * 60 * 1000;
-  const desdeEpoch = repaso || !estado.watermark
-    ? inicioFeed
-    : Math.max(inicioFeed, estado.watermark - 60 * 60 * 1000);
+  // Siempre se relee el tramo. El watermark dejaba fuera avisos ya vistos y rechazados,
+  // así que un arreglo del filtro no podía recuperarlos al día siguiente.
+  const desdeEpoch = madridAEpoch(tramo.desde) - 6 * 60 * 60 * 1000;
   console.log(`Tramo ${tramo.desde} → ${tramo.hasta}`);
   const maxPaginas = repaso ? Math.max(opciones.maxPaginas, 30) : opciones.maxPaginas;
   const hoy = ahora.slice(0, 10);

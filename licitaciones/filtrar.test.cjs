@@ -443,7 +443,7 @@ test('el correo agrupa por área y ordena por fecha tope', () => {
   assert.ok(comunicacion < tic);
   assert.ok(tic < mensaje.texto.indexOf('Mentoría, pymes y formación'));
   assert.match(mensaje.texto, /Ninguna en este tramo/);
-  assert.match(mensaje.texto, /Comunitat Valenciana y Baleares/);
+  assert.match(mensaje.texto, /Navarra, País Vasco, Comunitat Valenciana y Baleares/);
   assert.match(mensaje.texto, /Encaje Alto/);
   assert.ok(congreso < gala);
   assert.match(mensaje.texto, /9\.000\s*€/);
@@ -497,6 +497,27 @@ test('el correo marca el nivel de encaje y acepta Valencia y Baleares', () => {
     evaluar(base({
       lugares: [{ codigo: 'ES532', nombre: 'Mallorca' }],
       organoLugar: { codigo: 'ES532', nombre: 'Palma' },
+    }), AHORA).ok,
+    true,
+  );
+  assert.equal(
+    evaluar(base({
+      lugares: [{ codigo: 'ES220', nombre: 'Navarra' }],
+      organoLugar: { codigo: 'ES220', nombre: 'Pamplona' },
+    }), AHORA).ok,
+    true,
+  );
+  assert.equal(
+    evaluar(base({
+      lugares: [{ codigo: 'ES213', nombre: 'Bizkaia' }],
+      organoLugar: { codigo: 'ES213', nombre: 'Bilbao' },
+    }), AHORA).ok,
+    true,
+  );
+  assert.equal(
+    evaluar(base({
+      lugares: [],
+      organoLugar: { codigo: '', nombre: 'Donostia' },
     }), AHORA).ok,
     true,
   );

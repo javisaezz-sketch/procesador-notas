@@ -14,6 +14,7 @@ assert.strictEqual(contenidoEsSimilar(lidl, lidl), true);
 assert.strictEqual(contenidoEsSimilar('hola', 'hola'), true);
 
 assert.strictEqual(urlAptaParaDuplicado('https://www.instagram.com/laglamdelbuenvivir'), false);
+assert.strictEqual(urlAptaParaDuplicado('https://www.google.com/maps/search/Enric+Granados,+145?entry=gmail&source=g'), false);
 assert.strictEqual(urlAptaParaDuplicado('https://vidaystyle.com/noticias'), false);
 assert.strictEqual(urlAptaParaDuplicado('https://cdn.ejemplo.com/fotos/image.png'), false);
 assert.strictEqual(

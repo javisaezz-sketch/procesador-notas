@@ -136,6 +136,7 @@ test('la videovigilancia entra con plataforma y sale si solo son cámaras', () =
   assert.equal(
     evaluar(base({
       importe: 12000,
+      cpvs: ['72000000'],
       titulo: 'Plataforma de videovigilancia municipal',
       texto: 'Servicio de plataforma de videovigilancia',
     }), AHORA).motivo,
@@ -159,6 +160,39 @@ test('no confunde el protocolo informático ni el Congreso de los Diputados con 
       cpvs: ['79961000'],
     }), AHORA).motivo,
     'tema',
+  );
+});
+
+test('el CPV de ferias y actos entra aunque el título esté en catalán', () => {
+  assert.equal(
+    evaluar(base({
+      titulo: "Contractació de la conceptualització, disseny i producció d'una exposició itinerant",
+      texto: "Exposició itinerant de caràcter divulgatiu",
+      cpvs: ['79950000'],
+      importe: 139500,
+      organo: 'Agència de Residus de Catalunya',
+    }), AHORA).ficha.area,
+    'comunicacion',
+  );
+  assert.equal(
+    evaluar(base({
+      titulo: "Organització i gestió de l'acte SOM TURISME",
+      texto: "Organització i gestió de l'acte SOM TURISME",
+      cpvs: ['79952000'],
+      importe: 30000,
+    }), AHORA).ficha.area,
+    'comunicacion',
+  );
+  assert.equal(
+    evaluar(base({
+      titulo: 'Servicios de gestión y planificación estratégica de las redes sociales',
+      texto: 'Gestión de las redes sociales de la fundación',
+      cpvs: ['79340000'],
+      importe: 160000,
+      lugares: [{ codigo: 'ES300', nombre: 'Madrid' }],
+      organoLugar: { codigo: 'ES300', nombre: 'Madrid' },
+    }), AHORA).ficha.area,
+    'comunicacion',
   );
 });
 
@@ -214,7 +248,7 @@ test('el filtro TIC pide 30.000 y palabras de datos, pliegos o consultoría', ()
     'tic',
   );
   assert.equal(
-    evaluar(base({ importe: 29000, titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }), AHORA).motivo,
+    evaluar(base({ importe: 29000, cpvs: [], titulo: 'Oficina de proyectos PMO', texto: 'Implantación de la oficina de proyectos PMO' }), AHORA).motivo,
     'importe',
   );
   assert.equal(
@@ -226,7 +260,7 @@ test('el filtro TIC pide 30.000 y palabras de datos, pliegos o consultoría', ()
     'tic',
   );
   assert.equal(
-    evaluar(base({ importe: 40000, titulo: 'Consultoría jurídica', texto: 'Servicio de consultoría jurídica del contrato' }), AHORA).motivo,
+    evaluar(base({ importe: 40000, cpvs: [], titulo: 'Consultoría jurídica', texto: 'Servicio de consultoría jurídica del contrato' }), AHORA).motivo,
     'tema',
   );
   assert.equal(
@@ -252,22 +286,22 @@ test('el filtro TIC pide 30.000 y palabras de datos, pliegos o consultoría', ()
     'empresa',
   );
   assert.equal(
-    evaluar(base({ importe: 40000, titulo: 'Protección de datos personales', texto: 'Delegado de protección de datos personales' }), AHORA).motivo,
+    evaluar(base({ importe: 40000, cpvs: [], titulo: 'Protección de datos personales', texto: 'Delegado de protección de datos personales' }), AHORA).motivo,
     'tema',
   );
 });
 
 test('formación y pymes entran desde 7.000 si hay parte empresarial o TIC', () => {
   assert.equal(
-    evaluar(base({ importe: 9000, titulo: 'Curso de competencias digitales para pymes', texto: 'Curso de competencias digitales para pymes' }), AHORA).ficha.area,
+    evaluar(base({ importe: 9000, cpvs: [], titulo: 'Curso de competencias digitales para pymes', texto: 'Curso de competencias digitales para pymes' }), AHORA).ficha.area,
     'empresa',
   );
   assert.equal(
-    evaluar(base({ importe: 9000, titulo: 'Coaching para equipos directivos', texto: 'Programa de coaching para equipos directivos' }), AHORA).ficha.area,
+    evaluar(base({ importe: 9000, cpvs: [], titulo: 'Coaching para equipos directivos', texto: 'Programa de coaching para equipos directivos' }), AHORA).ficha.area,
     'empresa',
   );
   assert.equal(
-    evaluar(base({ importe: 9000, titulo: 'Curso de manipulador de alimentos', texto: 'Curso de manipulador de alimentos' }), AHORA).motivo,
+    evaluar(base({ importe: 9000, cpvs: [], titulo: 'Curso de manipulador de alimentos', texto: 'Curso de manipulador de alimentos' }), AHORA).motivo,
     'tema',
   );
 });
@@ -483,6 +517,18 @@ test('una licitación entra en el tramo por su fecha de publicación', () => {
   assert.equal(dentroDeVentana({ publicacion: '2026-10-02' }, desde, hasta), true);
   assert.equal(dentroDeVentana({ publicacion: '2026-10-04' }, desde, hasta), true);
   assert.equal(dentroDeVentana({ publicacion: '2026-10-01' }, desde, hasta), false);
+  assert.equal(dentroDeVentana({
+    publicacion: '2026-10-06',
+    actualizadoMadrid: '2026-10-07T20:00:00',
+  }, '2026-10-07T07:40:00', '2026-10-08T07:40:00'), true);
+  assert.equal(dentroDeVentana({
+    publicacion: '2026-10-06',
+    actualizadoMadrid: '2026-10-07T02:00:00',
+  }, '2026-10-07T07:40:00', '2026-10-08T07:40:00'), true);
+  assert.equal(dentroDeVentana({
+    publicacion: '2026-10-03',
+    actualizadoMadrid: '2026-10-07T20:00:00',
+  }, '2026-10-07T07:40:00', '2026-10-08T07:40:00'), false);
   assert.equal(puedeEnviarProgramado('2026-10-05T07:40:00'), false);
   assert.equal(puedeEnviarProgramado('2026-10-06T07:40:00'), true);
   assert.equal(puedeEnviarProgramado('2026-10-06T10:22:00'), true);

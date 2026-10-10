@@ -21,12 +21,16 @@ export default function ContentModal({
   onClose,
   onSave,
   onPublish,
+  onRehacer,
   canPublish = false,
   isPublishing = false,
   isSaving,
+  isRehaciendo = false,
+  rehacerAviso = '',
   saveError,
 }) {
   const [vista, setVista] = useState('editar');
+  const [indicaciones, setIndicaciones] = useState('');
   const [mostrarNotaOriginal, setMostrarNotaOriginal] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewCargando, setPreviewCargando] = useState(false);
@@ -37,6 +41,7 @@ export default function ContentModal({
 
   useEffect(() => {
     setVista('editar');
+    setIndicaciones('');
     setMostrarNotaOriginal(false);
     setPreviewHtml('');
     setTextoOriginal('');
@@ -144,6 +149,43 @@ export default function ContentModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-5">
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
+            <label
+              htmlFor="indicaciones-rehacer"
+              className="block text-base font-semibold text-slate-800 sm:text-sm"
+            >
+              Rehacer nota
+            </label>
+            <p className="mt-1 text-base text-slate-600 sm:text-sm">
+              Escribe el nuevo enfoque o las indicaciones para la IA. Si lo dejas vacío, reescribe la nota con el mismo material.
+            </p>
+            <textarea
+              id="indicaciones-rehacer"
+              value={indicaciones}
+              onChange={(event) => setIndicaciones(event.target.value)}
+              maxLength={2000}
+              disabled={isRehaciendo || isSaving || isPublishing}
+              placeholder="Por ejemplo: céntralo en el producto y el local, con un tono más cercano."
+              className="mt-3 min-h-[88px] w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-base text-slate-800 outline-none ring-amber-500 focus:ring-2 disabled:opacity-60 sm:text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setVista('editar');
+                onRehacer?.(indicaciones);
+              }}
+              disabled={isRehaciendo || isSaving || isPublishing || !onRehacer}
+              className="mt-3 rounded-xl bg-amber-600 px-4 py-3 text-base font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-amber-300 sm:py-2.5 sm:text-sm"
+            >
+              {isRehaciendo ? 'Rehaciendo...' : 'Rehacer nota'}
+            </button>
+            {rehacerAviso && (
+              <p className="mt-3 text-base text-emerald-800 sm:text-sm">
+                {rehacerAviso}
+              </p>
+            )}
+          </div>
+
           <div className="mb-6">
             {imagenesCargando ? (
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
@@ -315,6 +357,7 @@ export default function ContentModal({
                   id="titulo-generado"
                   type="text"
                   value={title}
+                  disabled={isRehaciendo}
                   onChange={(event) => onTitleChange(event.target.value)}
                   className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-900 outline-none ring-indigo-500 focus:ring-2 sm:py-3 sm:text-sm"
                 />
@@ -329,6 +372,7 @@ export default function ContentModal({
                 <textarea
                   id="contenido-generado"
                   value={content}
+                  disabled={isRehaciendo}
                   onChange={(event) => onContentChange(event.target.value)}
                   className="min-h-[280px] w-full rounded-xl border border-slate-300 px-4 py-4 font-mono text-base leading-7 text-slate-800 outline-none ring-indigo-500 focus:ring-2 sm:min-h-[320px] sm:px-4 sm:py-3 sm:text-sm sm:leading-6"
                 />
@@ -367,7 +411,7 @@ export default function ContentModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={isSaving || isPublishing}
+            disabled={isSaving || isPublishing || isRehaciendo}
             className="rounded-xl border border-slate-300 px-4 py-3.5 text-base font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 sm:py-2.5 sm:text-sm"
           >
             Cancelar
@@ -376,7 +420,7 @@ export default function ContentModal({
             <button
               type="button"
               onClick={onSave}
-              disabled={isSaving || isPublishing}
+              disabled={isSaving || isPublishing || isRehaciendo}
               className="rounded-xl bg-indigo-600 px-4 py-3.5 text-base font-semibold text-white transition hover:bg-indigo-700 disabled:bg-indigo-400 sm:py-2.5 sm:text-sm"
             >
               {isSaving ? 'Guardando...' : 'Guardar cambios'}
@@ -384,7 +428,7 @@ export default function ContentModal({
             <button
               type="button"
               onClick={onPublish}
-              disabled={!canPublish || isSaving || isPublishing || !onPublish}
+              disabled={!canPublish || isSaving || isPublishing || isRehaciendo || !onPublish}
               title={
                 canPublish
                   ? 'Elegir categoría y enviar a WordPress'

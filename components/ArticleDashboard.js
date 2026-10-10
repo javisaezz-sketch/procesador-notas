@@ -199,6 +199,8 @@ export default function ArticleDashboard({
   const [publicarUrls, setPublicarUrls] = useState([]);
   const [imagenesCargando, setImagenesCargando] = useState(false);
   const [guardandoId, setGuardandoId] = useState(null);
+  const [rehaciendoId, setRehaciendoId] = useState(null);
+  const [rehacerAviso, setRehacerAviso] = useState('');
   const [saveError, setSaveError] = useState('');
   const [publishingId, setPublishingId] = useState(null);
   const [publishingWebId, setPublishingWebId] = useState(null);
@@ -501,6 +503,7 @@ export default function ArticleDashboard({
     setDestacadaUrl(null);
     setPublicarUrls([]);
     setSaveError('');
+    setRehacerAviso('');
   }
 
   async function handleGuardar(articulo) {
@@ -593,6 +596,66 @@ export default function ArticleDashboard({
       return error.message;
     } finally {
       setGuardandoId(null);
+    }
+  }
+
+  async function handleRehacer(articulo, indicaciones) {
+    setRehaciendoId(articulo.id);
+    setSaveError('');
+    setRehacerAviso('');
+
+    try {
+      const response = await fetch(`/api/articulos/${articulo.id}/rehacer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ indicaciones: indicaciones || '' }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo rehacer la nota');
+      }
+
+      const titulo = data.titulo_generado ?? data.articulo?.titulo_generado ?? '';
+      const contenido =
+        data.contenido_generado ?? data.articulo?.contenido_generado ?? '';
+
+      setEditedTitle(titulo);
+      setEditedContent(contenido);
+      setRevisionListaPublicar(false);
+
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === articulo.id
+            ? {
+                ...item,
+                titulo_generado: titulo,
+                contenido_generado: contenido,
+              }
+            : item,
+        ),
+      );
+      setSelectedArticle((prev) =>
+        prev?.id === articulo.id
+          ? {
+              ...prev,
+              titulo_generado: titulo,
+              contenido_generado: contenido,
+            }
+          : prev,
+      );
+
+      setRehacerAviso(
+        'Nota rehecha. Revisa el texto y pulsa Guardar cambios antes de publicar.',
+      );
+      setFeedback({
+        type: 'success',
+        message: 'Nota rehecha. Revisa el texto y pulsa Guardar cambios antes de publicar.',
+      });
+    } catch (error) {
+      setSaveError(error.message);
+    } finally {
+      setRehaciendoId(null);
     }
   }
 
@@ -1763,9 +1826,12 @@ export default function ArticleDashboard({
           onClose={closeContentModal}
           onSave={() => handleGuardar(selectedArticle)}
           onPublish={() => setPublishArticle(selectedArticle)}
+          onRehacer={(indicaciones) => handleRehacer(selectedArticle, indicaciones)}
           canPublish={revisionListaPublicar}
           isPublishing={publishingId === selectedArticle.id}
           isSaving={guardandoId === selectedArticle.id}
+          isRehaciendo={rehaciendoId === selectedArticle.id}
+          rehacerAviso={rehacerAviso}
           saveError={saveError}
         />
       )}
